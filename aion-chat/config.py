@@ -2,7 +2,7 @@
 全局配置：路径、常量、settings / worldbook / chat_status 读写
 """
 
-import json, time, re
+import json, time, re, os
 from pathlib import Path
 
 # ── 路径 ─────────────────────────────────────────
@@ -39,16 +39,24 @@ INDEX_PATH = CHATS_DIR / "_index.json"
 def load_settings():
     if SETTINGS_PATH.exists():
         with open(SETTINGS_PATH, "r", encoding="utf-8") as f:
-            return json.load(f)
-    keys = {"gemini_key": "", "siliconflow_key": "", "gemini_free_key": "", "aipro_key": ""}
-    txt = BASE_DIR.parent / "所需要的API.txt"
-    if txt.exists():
-        with open(txt, "r", encoding="utf-8") as f:
-            for line in f:
-                if "gemini-api" in line.lower():
-                    keys["gemini_key"] = line.split("：")[-1].strip()
-                elif "硅基流动" in line.lower() and "api" in line.lower():
-                    keys["siliconflow_key"] = line.split("：")[-1].strip()
+            data = json.load(f)
+        # 环境变量补充（优先）
+        env_map = {"gemini_key": "GEMINI_API_KEY", "siliconflow_key": "SILICONFLOW_API_KEY",
+                    "gemini_free_key": "GEMINI_FREE_API_KEY", "aipro_key": "AIPRO_API_KEY"}
+        changed = False
+        for k, env in env_map.items():
+            val = os.environ.get(env, "")
+            if val and not data.get(k):
+                data[k] = val
+                changed = True
+        if changed:
+            save_settings(data)
+        return data
+    # 首次启动：从环境变量读
+    keys = {"gemini_key": os.environ.get("GEMINI_API_KEY", ""),
+            "siliconflow_key": os.environ.get("SILICONFLOW_API_KEY", ""),
+            "gemini_free_key": os.environ.get("GEMINI_FREE_API_KEY", ""),
+            "aipro_key": os.environ.get("AIPRO_API_KEY", "")}
     save_settings(keys)
     return keys
 
