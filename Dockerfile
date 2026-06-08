@@ -1,6 +1,6 @@
 FROM python:3.11-slim
 
-# cache-bust: 1780920686
+# cache-bust: 1780923973
 ARG CACHE_BUST
 
 WORKDIR /app
@@ -26,5 +26,5 @@ COPY . .
 # 暴露端口
 EXPOSE 8080
 
-# 启动命令：入口是根main.py
-CMD ["python", "-m", "uvicorn", "main:app", "--host", "0.0.0.0", "--port", "8080"]
+# 启动命令：入口改为cangyv_loader.py（避免与aion-chat/main.py循环导入）
+CMD ["python", "-m", "uvicorn", "cangyv_loader:app", "--host", "0.0.0.0", "--port", "8080"]
