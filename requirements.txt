@@ -1,0 +1,16 @@
+fastapi
+uvicorn
+httpx
+aiosqlite
+opencv-python-headless
+Pillow
+numpy
+pydantic
+python-multipart
+ebooklib
+beautifulsoup4
+lxml
+websockets
+psutil
+chinese-calendar
+mcp
