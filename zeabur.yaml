@@ -1,5 +1,4 @@
 name: Cangyv
 services:
   - name: web
-    path: ./aion-chat
-    command: uvicorn main:app --host 0.0.0.0 --port $PORT
+    run: uvicorn main:app --host 0.0.0.0 --port $PORT
