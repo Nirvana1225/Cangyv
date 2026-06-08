@@ -11,7 +11,10 @@ import asyncio, json, time, threading, logging
 from datetime import datetime, date
 
 import aiosqlite
-import akshare as ak
+try:
+    import akshare as ak
+except ImportError:
+    ak = None
 from chinese_calendar import is_workday
 
 from config import (
