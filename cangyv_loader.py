@@ -29,5 +29,5 @@ except Exception as e:
         return {"status": "degraded", "message": "aion-chat not loaded"}
 
     @app.get("/health")
-    async def health():
+async def health():
         return {"status": "degraded", "service": "cangyv"}
