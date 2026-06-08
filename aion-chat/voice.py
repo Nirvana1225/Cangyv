@@ -9,10 +9,14 @@
 
 import io, wave, time, threading, asyncio, re
 import numpy as np
-import sounddevice as sd
-import httpx
-import webrtcvad
-
+try:
+    import sounddevice as sd
+except ImportError:
+    sd = None
+try:
+    import webrtcvad
+except ImportError:
+    webrtcvad = None
 _EMOJI_RE = re.compile(
     "[\U0001F600-\U0001F64F\U0001F300-\U0001F5FF\U0001F680-\U0001F6FF"
     "\U0001F1E0-\U0001F1FF\U00002702-\U000027B0\U000024C2-\U0001F251"
