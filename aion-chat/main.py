@@ -22,22 +22,18 @@ logging.getLogger("uvicorn.access").addFilter(_QuietCamFilter())
 logging.getLogger("asyncio").setLevel(logging.CRITICAL)
 from fastapi.responses import FileResponse, HTMLResponse
 
-from config import BASE_DIR, PUBLIC_DIR, UPLOADS_DIR, CODEX_UPLOADS_DIR, SCREENSHOTS_DIR, load_cam_config
+from config import BASE_DIR, PUBLIC_DIR, UPLOADS_DIR, CODEX_UPLOADS_DIR, SCREENSHOTS_DIR
 from database import init_db, get_db
 from ws import manager
-from camera import cam
-from voice import voice
 from schedule import schedule_mgr
 
-from routes import chat, cam as cam_routes, files, settings, memories
-from routes import voice as voice_routes
+from routes import chat, files, settings, memories
 from routes import music as music_routes
 from routes import schedule as schedule_routes
 from routes import location as location_routes
 from routes import heart_whispers as heart_whispers_routes
 from routes import moments as moments_routes
 from routes import diary as diary_routes
-from routes import activity as activity_routes
 from routes import book as book_routes
 from routes import theater as theater_routes
 from routes import ghost_forest as ghost_forest_routes
@@ -53,12 +49,9 @@ from routes import connor_wallet as connor_wallet_routes
 from routes import health as health_routes
 from routes import phone_screen as phone_screen_routes
 from routes import search as search_routes
-from routes import autonomy as autonomy_routes
-from activity import pc_tracker, pc_display_tracker
 from memory import auto_digest
 from chatroom import _connor_1v1_auto_digest_loop
 from fund import fund_scheduler
-from autonomy import idle_autonomy_mgr
 
 
 # ── 自动记忆总结定时任务 ──────────────────────────
@@ -106,47 +99,20 @@ async def _auto_digest_loop():
 async def lifespan(app: FastAPI):
     await init_db()
     loop = asyncio.get_event_loop()
-    cam.set_event_loop(loop)
-    cam_cfg = load_cam_config()
-    if cam_cfg.get("monitor_enabled"):
-        if cam_cfg.get("active_source") == "esp32":
-            cam.open_esp32()
-        else:
-            cam.open_camera(cam_cfg["camera_index"])
-        cam.start_monitoring()
-    # 语音模块初始化
-    voice.set_event_loop(loop)
-    voice.set_ws_manager(manager)
     # 日程/闹铃模块初始化
     schedule_mgr.set_event_loop(loop)
     schedule_mgr.start()
-    # PC 活动采集
-    pc_tracker.set_event_loop(loop)
-    try:
-        pc_tracker.start()
-    except Exception as e:
-        print(f"[PCActivity] ❌ 启动异常: {e}")
-    try:
-        pc_display_tracker.start()
-    except Exception as e:
-        print(f"[PCDisplay] ❌ 启动异常: {e}")
     # 基金监控定时任务
     fund_scheduler.set_event_loop(loop)
     fund_scheduler.start()
     # 自动记忆总结定时任务
     digest_task = asyncio.create_task(_auto_digest_loop())
     cr_digest_task = asyncio.create_task(_connor_1v1_auto_digest_loop())
-    idle_autonomy_mgr.start()
     yield
-    idle_autonomy_mgr.stop()
     cr_digest_task.cancel()
     digest_task.cancel()
     fund_scheduler.stop()
-    pc_display_tracker.stop()
-    pc_tracker.stop()
     schedule_mgr.stop()
-    voice.stop()
-    cam.close_camera()
 
 
 app = FastAPI(lifespan=lifespan)
@@ -182,18 +148,15 @@ app.mount("/aion-pet", StaticFiles(directory=str(BASE_DIR.parent / "AionPet")), 
 
 # 路由
 app.include_router(chat.router)
-app.include_router(cam_routes.router)
 app.include_router(files.router)
 app.include_router(settings.router)
 app.include_router(memories.router)
-app.include_router(voice_routes.router)
 app.include_router(music_routes.router)
 app.include_router(schedule_routes.router)
 app.include_router(location_routes.router)
 app.include_router(heart_whispers_routes.router)
 app.include_router(moments_routes.router)
 app.include_router(diary_routes.router)
-app.include_router(activity_routes.router)
 app.include_router(book_routes.router)
 app.include_router(theater_routes.router)
 app.include_router(ghost_forest_routes.router)
@@ -209,7 +172,6 @@ app.include_router(connor_wallet_routes.router)
 app.include_router(health_routes.router)
 app.include_router(phone_screen_routes.router)
 app.include_router(search_routes.router)
-app.include_router(autonomy_routes.router)
 
 
 # 页面
@@ -237,13 +199,6 @@ async def memory_page():
 async def schedule_page():
     return FileResponse(BASE_DIR / "static" / "schedule.html")
 
-@app.get("/camera")
-async def camera_page():
-    return FileResponse(BASE_DIR / "static" / "camera.html")
-
-@app.get("/monitor-logs")
-async def monitor_logs_page():
-    return FileResponse(BASE_DIR / "static" / "monitor-logs.html")
 
 @app.get("/location")
 async def location_page():
