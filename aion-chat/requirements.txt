@@ -16,3 +16,4 @@ chinese-calendar
 mcp
 webrtcvad
 sounddevice
+pyncm
