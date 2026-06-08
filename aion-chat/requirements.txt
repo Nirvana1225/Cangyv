@@ -14,3 +14,5 @@ websockets
 psutil
 chinese-calendar
 mcp
+webrtcvad
+sounddevice
