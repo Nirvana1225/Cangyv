@@ -679,11 +679,13 @@ function renderDiaryCard(d) {
         </div>`;
     }
 
-    return `<div class="diary-card ${isExpanded ? 'expanded' : ''}" onclick="toggleExpand(${d.id})">
+    const _lck = d.locked && !unlockedDiaryIds.has(d.id);
+    return `<div class="diary-card ${isExpanded ? 'expanded' : ''}" onclick="${_lck ? '' : `toggleExpand(${d.id})`}">
         <div class="diary-card-header">
             <div class="diary-meta">
                 ${moodEmoji ? `<span class="diary-mood">${moodEmoji}</span>` : ''}
                 <span>${escapeHtml(timeStr)}</span>
+                ${d.locked ? '<span style="margin-left:6px;font-size:.8rem;" title="已加密">🔒</span>' : ''}
             </div>
             <span class="diary-privacy-icon" title="${d.is_private ? '私密' : '公开'}">${privacyIcon}</span>
         </div>
