@@ -1,0 +1,799 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>设置 · 苍聿居</title>
+<style>
+/* ═══ 全局变量 + 基础 ═══ */
+:root{--bg:#fdf6f0;--card:rgba(255,255,255,0.75);--cardSolid:#fff;--text:#4a3728;--muted:#8b7355;--accent:#c08b72;--accentLight:rgba(192,139,114,0.12);--border:rgba(160,128,96,0.15);--shadow:rgba(160,128,96,0.08);--inputBg:rgba(255,255,255,0.6);--radius:12px;--radius-lg:16px;--nav-h:56px;--green:#27ae60;--red:#e74c3c;--greenBg:rgba(39,174,96,0.1);--redBg:rgba(231,76,60,0.1)}
+*{margin:0;padding:0;box-sizing:border-box}
+html{font-size:16px;-webkit-text-size-adjust:100%}
+body{font-family:-apple-system,BlinkMacSystemFont,'Segoe UI','PingFang SC','Hiragino Sans GB','Microsoft YaHei',sans-serif;background:var(--bg);color:var(--text);min-height:100vh;padding-top:var(--nav-h);transition:background .3s,color .3s}
+a{color:var(--accent);text-decoration:none}
+button{cursor:pointer;font-family:inherit;border:none;background:none;color:inherit}
+input,textarea,select{font-family:inherit;font-size:inherit;color:var(--text);background:var(--inputBg);border:1px solid var(--border);border-radius:var(--radius);padding:10px 14px;outline:none;transition:border .2s}
+input:focus,textarea:focus,select:focus{border-color:var(--accent)}
+textarea{resize:vertical;min-height:80px}
+
+/* 导航栏 */
+.main-nav{position:fixed;top:0;left:0;right:0;height:var(--nav-h);background:var(--card);backdrop-filter:blur(20px);-webkit-backdrop-filter:blur(20px);border-bottom:1px solid var(--border);display:flex;align-items:center;padding:0 16px;z-index:1000;gap:8px}
+.nav-brand{font-size:1.15rem;font-weight:700;color:var(--accent);cursor:pointer;white-space:nowrap}
+.nav-links{display:flex;gap:2px;flex:1;justify-content:center;overflow-x:auto;scrollbar-width:none}
+.nav-links::-webkit-scrollbar{display:none}
+.nav-link{display:flex;align-items:center;gap:4px;padding:6px 12px;border-radius:var(--radius);font-size:.875rem;color:var(--muted);transition:all .2s;white-space:nowrap}
+.nav-link:hover{background:var(--accentLight);color:var(--accent)}
+.nav-link.active{background:var(--accentLight);color:var(--accent);font-weight:600}
+.nav-theme{font-size:1.1rem;padding:6px 8px;border-radius:var(--radius);transition:background .2s}
+.nav-theme:hover{background:var(--accentLight)}
+
+/* 卡片 */
+.card{background:var(--card);backdrop-filter:blur(12px);-webkit-backdrop-filter:blur(12px);border:1px solid var(--border);border-radius:var(--radius-lg);padding:20px;transition:box-shadow .2s,transform .15s}
+.card:hover{box-shadow:0 4px 20px var(--shadow)}
+
+/* 按钮 */
+.btn{display:inline-flex;align-items:center;justify-content:center;gap:6px;padding:8px 18px;border-radius:var(--radius);font-size:.875rem;font-weight:500;transition:all .2s;cursor:pointer}
+.btn-primary{background:var(--accent);color:#fff}
+.btn-primary:hover{opacity:.9;transform:translateY(-1px)}
+.btn-ghost{background:var(--accentLight);color:var(--accent)}
+.btn-ghost:hover{background:var(--accent);color:#fff}
+.btn-sm{padding:5px 12px;font-size:.8rem}
+.btn-danger{background:#e74c3c;color:#fff}
+.btn-danger:hover{opacity:.9}
+
+/* 布局 */
+.container{max-width:900px;margin:0 auto;padding:16px}
+.section-title{font-size:1.05rem;font-weight:700;margin-bottom:14px;margin-top:24px;display:flex;align-items:center;gap:8px;color:var(--text)}
+.section-title:first-of-type{margin-top:0}
+.section-title .icon{font-size:1.2rem}
+
+/* ═══ 设置页专用 ═══ */
+
+/* 设置分组卡片 */
+.settings-card{margin-bottom:16px}
+.settings-card .card-title{font-size:.95rem;font-weight:700;margin-bottom:16px;display:flex;align-items:center;gap:8px;color:var(--text)}
+.settings-card .card-title .icon{font-size:1.1rem}
+
+/* 设置行 */
+.setting-row{display:flex;align-items:center;justify-content:space-between;padding:10px 0;border-bottom:1px solid var(--border);gap:12px}
+.setting-row:last-child{border-bottom:none}
+.setting-label{font-size:.88rem;color:var(--text);min-width:0;flex-shrink:0}
+.setting-label .sub{display:block;font-size:.75rem;color:var(--muted);margin-top:2px}
+.setting-control{display:flex;align-items:center;gap:8px;flex-shrink:0}
+
+/* 输入框 */
+.setting-input{width:220px;padding:8px 12px;font-size:.85rem}
+.setting-input-sm{width:140px;padding:8px 10px;font-size:.85rem}
+.setting-select{padding:8px 12px;font-size:.85rem;min-width:120px}
+
+/* 开关 */
+.toggle{position:relative;width:48px;height:26px;border-radius:13px;background:var(--border);cursor:pointer;transition:background .25s;flex-shrink:0}
+.toggle.active{background:var(--accent)}
+.toggle::after{content:'';position:absolute;top:3px;left:3px;width:20px;height:20px;border-radius:50%;background:#fff;transition:transform .25s;box-shadow:0 1px 3px rgba(0,0,0,.15)}
+.toggle.active::after{transform:translateX(22px)}
+
+/* 滑块 */
+.slider-group{display:flex;align-items:center;gap:10px;width:100%}
+.slider-group input[type="range"]{flex:1;-webkit-appearance:none;height:6px;border-radius:3px;background:var(--border);outline:none;border:none;padding:0;min-width:100px}
+.slider-group input[type="range"]::-webkit-slider-thumb{-webkit-appearance:none;width:20px;height:20px;border-radius:50%;background:var(--accent);cursor:pointer;box-shadow:0 2px 6px var(--shadow)}
+.slider-group input[type="range"]::-moz-range-thumb{width:20px;height:20px;border-radius:50%;background:var(--accent);cursor:pointer;border:none}
+.slider-value{font-size:.9rem;font-weight:700;color:var(--accent);min-width:48px;text-align:right;flex-shrink:0}
+
+/* Provider 标签页 */
+.provider-tabs{display:flex;gap:4px;overflow-x:auto;scrollbar-width:none;padding-bottom:4px;margin-bottom:16px}
+.provider-tabs::-webkit-scrollbar{display:none}
+.provider-tab{padding:7px 16px;border-radius:var(--radius);font-size:.82rem;font-weight:500;color:var(--muted);background:var(--card);border:1px solid var(--border);white-space:nowrap;transition:all .2s;cursor:pointer}
+.provider-tab:hover{background:var(--accentLight);color:var(--accent);border-color:var(--accent)}
+.provider-tab.active{background:var(--accent);color:#fff;border-color:var(--accent)}
+
+/* Provider 表单 */
+.provider-form{display:flex;flex-direction:column;gap:12px}
+.form-field{display:flex;flex-direction:column;gap:4px}
+.form-field label{font-size:.8rem;color:var(--muted);font-weight:500}
+.form-field input,.form-field select{width:100%;padding:9px 12px;font-size:.85rem}
+.form-field .preset-hint{font-size:.72rem;color:var(--muted);margin-top:2px}
+
+/* Vision provider */
+.vision-section{margin-top:8px}
+
+/* 主题色块 */
+.theme-grid{display:flex;gap:8px;flex-wrap:wrap}
+.theme-swatch{width:40px;height:40px;border-radius:var(--radius);cursor:pointer;border:2px solid transparent;transition:all .2s;position:relative}
+.theme-swatch:hover{transform:scale(1.1)}
+.theme-swatch.active{border-color:var(--text);box-shadow:0 0 0 2px var(--accent)}
+.theme-swatch::after{content:'✓';position:absolute;inset:0;display:flex;align-items:center;justify-content:center;color:#fff;font-size:.9rem;font-weight:700;opacity:0;transition:opacity .2s}
+.theme-swatch.active::after{opacity:1}
+.theme-swatch[data-theme="warm"]{background:linear-gradient(135deg,#fdf6f0,#c08b72)}
+.theme-swatch[data-theme="blue"]{background:linear-gradient(135deg,#f0f4f8,#5b8fb9)}
+.theme-swatch[data-theme="rose"]{background:linear-gradient(135deg,#fdf0f4,#d4849a)}
+.theme-swatch[data-theme="dark"]{background:linear-gradient(135deg,#1a1a2e,#7c6cf0)}
+
+/* 字体大小选择 */
+.font-size-group{display:flex;gap:6px}
+.font-size-btn{padding:6px 14px;border-radius:var(--radius);font-size:.82rem;border:1px solid var(--border);transition:all .2s;background:var(--card)}
+.font-size-btn.active{background:var(--accent);color:#fff;border-color:var(--accent)}
+.font-size-btn:hover:not(.active){background:var(--accentLight)}
+
+/* 输出模式选择 */
+.mode-group{display:flex;gap:6px}
+.mode-btn{padding:6px 14px;border-radius:var(--radius);font-size:.82rem;border:1px solid var(--border);transition:all .2s;background:var(--card)}
+.mode-btn.active{background:var(--accent);color:#fff;border-color:var(--accent)}
+.mode-btn:hover:not(.active){background:var(--accentLight)}
+
+/* Toast */
+.toast{position:fixed;bottom:80px;left:50%;transform:translateX(-50%) translateY(20px);padding:10px 24px;border-radius:var(--radius);font-size:.875rem;z-index:9999;opacity:0;transition:all .3s;pointer-events:none}
+.toast.show{opacity:1;transform:translateX(-50%) translateY(0)}
+.toast-info{background:var(--accent);color:#fff}
+.toast-error{background:#e74c3c;color:#fff}
+.toast-success{background:#27ae60;color:#fff}
+
+/* 底部保存提示 */
+.save-bar{position:sticky;bottom:0;left:0;right:0;padding:12px 16px;background:var(--cardSolid);border-top:1px solid var(--border);display:flex;align-items:center;justify-content:space-between;z-index:100;opacity:0;transform:translateY(100%);transition:all .3s}
+.save-bar.visible{opacity:1;transform:translateY(0)}
+.save-bar .hint{font-size:.85rem;color:var(--muted)}
+
+/* ═══ 响应式 ═══ */
+@media(max-width:768px){
+    .nav-link .nav-label{display:none}
+    .nav-link{padding:6px 8px;font-size:1rem}
+    .container{padding:12px}
+    .setting-row{flex-wrap:wrap}
+    .setting-control{width:100%;justify-content:flex-end;margin-top:4px}
+    .setting-input{width:100%}
+    .setting-input-sm{width:100%}
+    .slider-group input[type="range"]{min-width:80px}
+    .provider-tabs{gap:3px}
+    .provider-tab{padding:6px 10px;font-size:.78rem}
+}
+@media(min-width:769px){
+    .mobile-only{display:none!important}
+}
+@media(max-width:768px){
+    .desktop-only{display:none!important}
+}
+</style>
+</head>
+<body>
+
+<!-- ═══ 导航栏 ═══ -->
+<div id="nav-container"></div>
+
+<!-- ═══ 主内容 ═══ -->
+<div class="container">
+
+  <!-- ═══ 1. 模型提供商 ═══ -->
+  <div class="section-title"><span class="icon">🤖</span> 模型提供商</div>
+  <div class="card settings-card">
+    <div class="card-title"><span class="icon">🔌</span> 当前活跃提供商</div>
+    <div class="provider-tabs" id="providerTabs"></div>
+    <div class="provider-form" id="providerForm"></div>
+  </div>
+
+  <!-- ═══ 2. 调音台 ═══ -->
+  <div class="section-title"><span class="icon">🎛</span> 调音台</div>
+  <div class="card settings-card">
+    <!-- Temperature -->
+    <div class="setting-row">
+      <div class="setting-label">
+        Temperature
+        <span class="sub">控制回复的随机性，值越高越有创意</span>
+      </div>
+      <div class="setting-control">
+        <div class="slider-group" style="width:220px">
+          <input type="range" id="temperature" min="0" max="2" step="0.01" value="0.7">
+          <span class="slider-value" id="temperatureVal">0.70</span>
+        </div>
+      </div>
+    </div>
+    <!-- Max Output Tokens -->
+    <div class="setting-row">
+      <div class="setting-label">
+        最大输出 Token
+        <span class="sub">单次回复的最大长度</span>
+      </div>
+      <div class="setting-control">
+        <div class="slider-group" style="width:220px">
+          <input type="range" id="maxOutputTokens" min="256" max="8192" step="128" value="4096">
+          <span class="slider-value" id="maxOutputTokensVal">4096</span>
+        </div>
+      </div>
+    </div>
+    <!-- Short-term Message Limit -->
+    <div class="setting-row">
+      <div class="setting-label">
+        短期消息上限
+        <span class="sub">发送给模型的近期消息条数</span>
+      </div>
+      <div class="setting-control">
+        <div class="slider-group" style="width:220px">
+          <input type="range" id="shortTermLimit" min="1" max="50" step="1" value="20">
+          <span class="slider-value" id="shortTermLimitVal">20</span>
+        </div>
+      </div>
+    </div>
+    <!-- Memory Snippet Limit -->
+    <div class="setting-row">
+      <div class="setting-label">
+        记忆片段上限
+        <span class="sub">注入上下文的记忆条数</span>
+      </div>
+      <div class="setting-control">
+        <div class="slider-group" style="width:220px">
+          <input type="range" id="memorySnippetLimit" min="0" max="20" step="1" value="5">
+          <span class="slider-value" id="memorySnippetLimitVal">5</span>
+        </div>
+      </div>
+    </div>
+    <!-- Stream -->
+    <div class="setting-row">
+      <div class="setting-label">
+        流式输出
+        <span class="sub">逐字输出回复内容</span>
+      </div>
+      <div class="setting-control">
+        <div class="toggle" id="streamToggle" onclick="toggleSwitch(this,'stream')"></div>
+      </div>
+    </div>
+  </div>
+
+  <!-- ═══ 3. 回复行为 ═══ -->
+  <div class="section-title"><span class="icon">💬</span> 回复行为</div>
+  <div class="card settings-card">
+    <!-- Output Mode -->
+    <div class="setting-row">
+      <div class="setting-label">
+        输出模式
+        <span class="sub">控制回复的输出方式</span>
+      </div>
+      <div class="setting-control">
+        <div class="mode-group" id="outputModeGroup">
+          <button class="mode-btn" data-mode="split" onclick="setOutputMode('split')">分句</button>
+          <button class="mode-btn" data-mode="full" onclick="setOutputMode('full')">全文</button>
+          <button class="mode-btn" data-mode="stream" onclick="setOutputMode('stream')">流式</button>
+        </div>
+      </div>
+    </div>
+    <!-- No Actions -->
+    <div class="setting-row">
+      <div class="setting-label">
+        禁止动作描写
+        <span class="sub">关闭 *动作* 格式的描写</span>
+      </div>
+      <div class="setting-control">
+        <div class="toggle" id="noActionsToggle" onclick="toggleSwitch(this,'noActions')"></div>
+      </div>
+    </div>
+  </div>
+
+  <!-- ═══ 4. 延迟回复 ═══ -->
+  <div class="section-title"><span class="icon">⏱</span> 延迟回复</div>
+  <div class="card settings-card">
+    <div class="setting-row">
+      <div class="setting-label">
+        启用延迟回复
+        <span class="sub">模拟真实打字节奏</span>
+      </div>
+      <div class="setting-control">
+        <div class="toggle" id="delayedReplyToggle" onclick="toggleSwitch(this,'delayedReply')"></div>
+      </div>
+    </div>
+    <div class="setting-row" id="delayDurationRow">
+      <div class="setting-label">
+        延迟时长
+      </div>
+      <div class="setting-control">
+        <select class="setting-select" id="delayDuration" onchange="onDelayDurationChange()">
+          <option value="5000">5 秒</option>
+          <option value="10000" selected>10 秒</option>
+          <option value="15000">15 秒</option>
+          <option value="20000">20 秒</option>
+          <option value="30000">30 秒</option>
+          <option value="60000">60 秒</option>
+        </select>
+      </div>
+    </div>
+  </div>
+
+  <!-- ═══ 5. 视觉模型 ═══ -->
+  <div class="section-title"><span class="icon">👁</span> 视觉模型 <span style="font-size:.75rem;color:var(--muted);font-weight:400">（陪看/小剧场）</span></div>
+  <div class="card settings-card">
+    <div class="setting-row">
+      <div class="setting-label">
+        启用独立视觉模型
+        <span class="sub">为图像识别使用单独的模型配置</span>
+      </div>
+      <div class="setting-control">
+        <div class="toggle" id="visionToggle" onclick="toggleSwitch(this,'visionEnabled')"></div>
+      </div>
+    </div>
+    <div id="visionFields" style="display:none">
+      <div class="provider-form" style="margin-top:12px">
+        <div class="form-field">
+          <label>Base URL</label>
+          <input type="text" id="visionBaseUrl" placeholder="https://api.example.com/v1">
+        </div>
+        <div class="form-field">
+          <label>API Key</label>
+          <input type="password" id="visionApiKey" placeholder="输入视觉模型 API Key">
+        </div>
+        <div class="form-field">
+          <label>模型</label>
+          <input type="text" id="visionModel" placeholder="如：gemini-2.0-flash">
+        </div>
+      </div>
+    </div>
+  </div>
+
+  <!-- ═══ 6. 外观 ═══ -->
+  <div class="section-title"><span class="icon">🎨</span> 外观</div>
+  <div class="card settings-card">
+    <div class="setting-row">
+      <div class="setting-label">
+        主题
+      </div>
+      <div class="setting-control">
+        <div class="theme-grid" id="themeGrid">
+          <div class="theme-swatch" data-theme="warm" onclick="selectTheme('warm')" title="暖阳"></div>
+          <div class="theme-swatch" data-theme="blue" onclick="selectTheme('blue')" title="海蓝"></div>
+          <div class="theme-swatch" data-theme="rose" onclick="selectTheme('rose')" title="玫瑰"></div>
+          <div class="theme-swatch" data-theme="dark" onclick="selectTheme('dark')" title="暗夜"></div>
+        </div>
+      </div>
+    </div>
+    <div class="setting-row">
+      <div class="setting-label">
+        字体大小
+      </div>
+      <div class="setting-control">
+        <div class="font-size-group" id="fontSizeGroup">
+          <button class="font-size-btn" data-size="small" onclick="setFontSize('small')">小</button>
+          <button class="font-size-btn" data-size="standard" onclick="setFontSize('standard')">标准</button>
+          <button class="font-size-btn" data-size="large" onclick="setFontSize('large')">大</button>
+        </div>
+      </div>
+    </div>
+  </div>
+
+  <!-- 底部间距 -->
+  <div style="height:80px"></div>
+</div>
+
+<!-- ═══ 保存提示条 ═══ -->
+<div class="save-bar" id="saveBar">
+  <span class="hint">设置已修改</span>
+  <div style="display:flex;gap:8px">
+    <button class="btn btn-ghost btn-sm" onclick="resetSettings()">重置</button>
+    <button class="btn btn-primary btn-sm" onclick="saveSettings()">💾 保存设置</button>
+  </div>
+</div>
+
+<!-- ═══ 共享库 ═══ -->
+<script src="/common.js"></script>
+
+<script>
+// ── 默认设置 ──
+const DEFAULT_SETTINGS = {
+  activeProvider: 'openrouter',
+  profiles: {
+    openrouter: { baseUrl: 'https://openrouter.ai/api/v1', apiKey: '', model: 'anthropic/claude-sonnet-4' },
+    claude:     { baseUrl: 'https://api.anthropic.com', apiKey: '', model: 'claude-sonnet-4-20250514' },
+    gemini:     { baseUrl: 'https://generativelanguage.googleapis.com', apiKey: '', model: 'gemini-2.0-flash' },
+    glm:        { baseUrl: 'https://open.bigmodel.cn/api/paas', apiKey: '', model: 'glm-4-flash' },
+    deepseek:   { baseUrl: 'https://api.deepseek.com', apiKey: '', model: 'deepseek-chat' },
+    gemai:      { baseUrl: '', apiKey: '', model: '' },
+  },
+  temperature: 0.7,
+  stream: true,
+  streamSplit: true,
+  noActions: false,
+  delayedReply: false,
+  delayMs: 10000,
+  contextLoad: {
+    maxOutputTokens: 4096,
+    shortTermMessageLimit: 20,
+    memorySnippetLimit: 5,
+  },
+  visionProvider: '',
+  visionProfile: null,
+  visual: {
+    theme: 'warm',
+    fontSize: 'standard',
+  },
+};
+
+// ── Provider 预设模型 ──
+const PROVIDER_PRESETS = {
+  openrouter: [
+    'anthropic/claude-sonnet-4',
+    'anthropic/claude-3.5-sonnet',
+    'anthropic/claude-3-haiku',
+    'openai/gpt-4o',
+    'openai/gpt-4o-mini',
+    'google/gemini-2.0-flash-001',
+    'deepseek/deepseek-chat',
+  ],
+  claude: [
+    'claude-sonnet-4-20250514',
+    'claude-3-5-sonnet-20241022',
+    'claude-3-haiku-20240307',
+  ],
+  gemini: [
+    'gemini-2.0-flash',
+    'gemini-2.0-flash-lite',
+    'gemini-1.5-pro',
+    'gemini-1.5-flash',
+  ],
+  glm: [
+    'glm-4-flash',
+    'glm-4-plus',
+    'glm-4-air',
+    'glm-4-long',
+  ],
+  deepseek: [
+    'deepseek-chat',
+    'deepseek-reasoner',
+  ],
+  gemai: [],
+};
+
+const PROVIDER_LABELS = {
+  openrouter: 'OpenRouter',
+  claude: 'Claude',
+  gemini: 'Gemini',
+  glm: 'GLM',
+  deepseek: 'DeepSeek',
+  gemai: 'GeMai',
+};
+
+// ── 状态 ──
+let settings = {};
+let dirty = false;
+
+// ── 加载设置 ──
+function loadSettings() {
+  try {
+    const raw = localStorage.getItem('cangyv_settings');
+    if (raw) {
+      const saved = JSON.parse(raw);
+      // 深度合并，保留默认值中存在但保存数据中缺失的字段
+      settings = deepMerge(structuredClone(DEFAULT_SETTINGS), saved);
+    } else {
+      settings = structuredClone(DEFAULT_SETTINGS);
+    }
+  } catch (e) {
+    console.warn('加载设置失败，使用默认值:', e);
+    settings = structuredClone(DEFAULT_SETTINGS);
+  }
+}
+
+function deepMerge(target, source) {
+  for (const key of Object.keys(source)) {
+    if (source[key] && typeof source[key] === 'object' && !Array.isArray(source[key])) {
+      if (!target[key]) target[key] = {};
+      deepMerge(target[key], source[key]);
+    } else {
+      target[key] = source[key];
+    }
+  }
+  return target;
+}
+
+// ── 保存设置 ──
+function saveSettings() {
+  try {
+    localStorage.setItem('cangyv_settings', JSON.stringify(settings));
+    dirty = false;
+    updateSaveBar();
+    showToast('设置已保存', 'success');
+  } catch (e) {
+    showToast('保存失败: ' + e.message, 'error');
+  }
+}
+
+// ── 重置设置 ──
+function resetSettings() {
+  if (!confirm('确定要重置所有设置为默认值吗？')) return;
+  settings = structuredClone(DEFAULT_SETTINGS);
+  localStorage.removeItem('cangyv_settings');
+  dirty = false;
+  updateSaveBar();
+  applyTheme(settings.visual.theme);
+  applyFontSize(settings.visual.fontSize);
+  renderAll();
+  showToast('已恢复默认设置', 'info');
+}
+
+// ── 标记脏 ──
+function markDirty() {
+  dirty = true;
+  updateSaveBar();
+}
+
+function updateSaveBar() {
+  const bar = document.getElementById('saveBar');
+  bar.classList.toggle('visible', dirty);
+}
+
+// ── 渲染全部 ──
+function renderAll() {
+  renderProviderTabs();
+  renderProviderForm();
+  renderSliders();
+  renderToggles();
+  renderOutputMode();
+  renderDelayDuration();
+  renderVision();
+  renderTheme();
+  renderFontSize();
+}
+
+// ═══ Provider 标签页 ═══
+function renderProviderTabs() {
+  const container = document.getElementById('providerTabs');
+  const providers = Object.keys(PROVIDER_LABELS);
+  container.innerHTML = providers.map(p =>
+    `<button class="provider-tab ${settings.activeProvider === p ? 'active' : ''}" data-provider="${p}" onclick="switchProvider('${p}')">${PROVIDER_LABELS[p]}</button>`
+  ).join('');
+}
+
+function switchProvider(provider) {
+  settings.activeProvider = provider;
+  markDirty();
+  renderProviderTabs();
+  renderProviderForm();
+}
+
+function renderProviderForm() {
+  const container = document.getElementById('providerForm');
+  const p = settings.activeProvider;
+  const profile = settings.profiles[p] || { baseUrl: '', apiKey: '', model: '' };
+  const presets = PROVIDER_PRESETS[p] || [];
+
+  let presetOptions = '';
+  if (presets.length > 0) {
+    presetOptions = `<option value="">-- 选择预设模型 --</option>` +
+      presets.map(m => `<option value="${escapeHtml(m)}" ${profile.model === m ? 'selected' : ''}>${escapeHtml(m)}</option>`).join('');
+  }
+
+  container.innerHTML = `
+    <div class="form-field">
+      <label>Base URL</label>
+      <input type="text" id="provBaseUrl" value="${escapeHtml(profile.baseUrl)}" placeholder="https://api.example.com/v1" oninput="onProviderFieldChange()">
+    </div>
+    <div class="form-field">
+      <label>API Key</label>
+      <input type="password" id="provApiKey" value="${escapeHtml(profile.apiKey)}" placeholder="输入 API Key" oninput="onProviderFieldChange()">
+    </div>
+    <div class="form-field">
+      <label>模型</label>
+      ${presets.length > 0 ? `
+        <select id="provModelPreset" onchange="onModelPresetChange()">
+          ${presetOptions}
+        </select>
+        <div class="preset-hint">或手动输入模型名称：</div>
+      ` : ''}
+      <input type="text" id="provModel" value="${escapeHtml(profile.model)}" placeholder="模型名称" oninput="onProviderFieldChange()">
+    </div>
+  `;
+}
+
+function onProviderFieldChange() {
+  const p = settings.activeProvider;
+  if (!settings.profiles[p]) settings.profiles[p] = { baseUrl: '', apiKey: '', model: '' };
+  settings.profiles[p].baseUrl = document.getElementById('provBaseUrl').value.trim();
+  settings.profiles[p].apiKey = document.getElementById('provApiKey').value.trim();
+  settings.profiles[p].model = document.getElementById('provModel').value.trim();
+  markDirty();
+}
+
+function onModelPresetChange() {
+  const sel = document.getElementById('provModelPreset');
+  const input = document.getElementById('provModel');
+  if (sel.value) {
+    input.value = sel.value;
+  }
+  onProviderFieldChange();
+}
+
+// ═══ 滑块 ═══
+function renderSliders() {
+  // Temperature
+  const tempSlider = document.getElementById('temperature');
+  const tempVal = document.getElementById('temperatureVal');
+  tempSlider.value = settings.temperature;
+  tempVal.textContent = settings.temperature.toFixed(2);
+
+  // Max Output Tokens
+  const tokenSlider = document.getElementById('maxOutputTokens');
+  const tokenVal = document.getElementById('maxOutputTokensVal');
+  tokenSlider.value = settings.contextLoad.maxOutputTokens;
+  tokenVal.textContent = settings.contextLoad.maxOutputTokens;
+
+  // Short-term limit
+  const stSlider = document.getElementById('shortTermLimit');
+  const stVal = document.getElementById('shortTermLimitVal');
+  stSlider.value = settings.contextLoad.shortTermMessageLimit;
+  stVal.textContent = settings.contextLoad.shortTermMessageLimit;
+
+  // Memory snippet limit
+  const memSlider = document.getElementById('memorySnippetLimit');
+  const memVal = document.getElementById('memorySnippetLimitVal');
+  memSlider.value = settings.contextLoad.memorySnippetLimit;
+  memVal.textContent = settings.contextLoad.memorySnippetLimit;
+}
+
+// 滑块事件
+document.getElementById('temperature').addEventListener('input', function() {
+  settings.temperature = parseFloat(this.value);
+  document.getElementById('temperatureVal').textContent = settings.temperature.toFixed(2);
+  markDirty();
+});
+
+document.getElementById('maxOutputTokens').addEventListener('input', function() {
+  settings.contextLoad.maxOutputTokens = parseInt(this.value);
+  document.getElementById('maxOutputTokensVal').textContent = settings.contextLoad.maxOutputTokens;
+  markDirty();
+});
+
+document.getElementById('shortTermLimit').addEventListener('input', function() {
+  settings.contextLoad.shortTermMessageLimit = parseInt(this.value);
+  document.getElementById('shortTermLimitVal').textContent = settings.contextLoad.shortTermMessageLimit;
+  markDirty();
+});
+
+document.getElementById('memorySnippetLimit').addEventListener('input', function() {
+  settings.contextLoad.memorySnippetLimit = parseInt(this.value);
+  document.getElementById('memorySnippetLimitVal').textContent = settings.contextLoad.memorySnippetLimit;
+  markDirty();
+});
+
+// ═══ 开关 ═══
+function renderToggles() {
+  document.getElementById('streamToggle').classList.toggle('active', settings.stream);
+  document.getElementById('noActionsToggle').classList.toggle('active', settings.noActions);
+  document.getElementById('delayedReplyToggle').classList.toggle('active', settings.delayedReply);
+  document.getElementById('visionToggle').classList.toggle('active', !!settings.visionProfile);
+  updateDelayRowVisibility();
+}
+
+function toggleSwitch(el, key) {
+  if (key === 'stream') {
+    settings.stream = !settings.stream;
+    el.classList.toggle('active', settings.stream);
+  } else if (key === 'noActions') {
+    settings.noActions = !settings.noActions;
+    el.classList.toggle('active', settings.noActions);
+  } else if (key === 'delayedReply') {
+    settings.delayedReply = !settings.delayedReply;
+    el.classList.toggle('active', settings.delayedReply);
+    updateDelayRowVisibility();
+  } else if (key === 'visionEnabled') {
+    const enabled = !settings.visionProfile;
+    settings.visionProfile = enabled ? { baseUrl: '', apiKey: '', model: '' } : null;
+    settings.visionProvider = enabled ? 'custom' : '';
+    el.classList.toggle('active', enabled);
+    renderVision();
+  }
+  markDirty();
+}
+
+function updateDelayRowVisibility() {
+  const row = document.getElementById('delayDurationRow');
+  row.style.opacity = settings.delayedReply ? '1' : '0.4';
+  row.style.pointerEvents = settings.delayedReply ? 'auto' : 'none';
+}
+
+// ═══ 输出模式 ═══
+function renderOutputMode() {
+  let mode = 'full';
+  if (settings.stream) {
+    mode = settings.streamSplit ? 'split' : 'stream';
+  }
+  document.querySelectorAll('#outputModeGroup .mode-btn').forEach(btn => {
+    btn.classList.toggle('active', btn.dataset.mode === mode);
+  });
+}
+
+function setOutputMode(mode) {
+  if (mode === 'split') {
+    settings.stream = true;
+    settings.streamSplit = true;
+  } else if (mode === 'stream') {
+    settings.stream = true;
+    settings.streamSplit = false;
+  } else if (mode === 'full') {
+    settings.stream = false;
+    settings.streamSplit = false;
+  }
+  document.querySelectorAll('#outputModeGroup .mode-btn').forEach(btn => {
+    btn.classList.toggle('active', btn.dataset.mode === mode);
+  });
+  // 同步开关状态
+  document.getElementById('streamToggle').classList.toggle('active', settings.stream);
+  markDirty();
+}
+
+// ═══ 延迟时长 ═══
+function renderDelayDuration() {
+  const sel = document.getElementById('delayDuration');
+  sel.value = String(settings.delayMs);
+  updateDelayRowVisibility();
+}
+
+function onDelayDurationChange() {
+  settings.delayMs = parseInt(document.getElementById('delayDuration').value);
+  markDirty();
+}
+
+// ═══ 视觉模型 ═══
+function renderVision() {
+  const fields = document.getElementById('visionFields');
+  const enabled = !!settings.visionProfile;
+  fields.style.display = enabled ? 'block' : 'none';
+  if (enabled) {
+    const vp = settings.visionProfile || {};
+    document.getElementById('visionBaseUrl').value = vp.baseUrl || '';
+    document.getElementById('visionApiKey').value = vp.apiKey || '';
+    document.getElementById('visionModel').value = vp.model || '';
+  }
+}
+
+// 视觉模型字段变更
+document.addEventListener('input', function(e) {
+  if (e.target.id === 'visionBaseUrl' || e.target.id === 'visionApiKey' || e.target.id === 'visionModel') {
+    if (settings.visionProfile) {
+      settings.visionProfile.baseUrl = document.getElementById('visionBaseUrl').value.trim();
+      settings.visionProfile.apiKey = document.getElementById('visionApiKey').value.trim();
+      settings.visionProfile.model = document.getElementById('visionModel').value.trim();
+      markDirty();
+    }
+  }
+});
+
+// ═══ 主题 ═══
+function renderTheme() {
+  document.querySelectorAll('.theme-swatch').forEach(s => {
+    s.classList.toggle('active', s.dataset.theme === settings.visual.theme);
+  });
+}
+
+function selectTheme(name) {
+  settings.visual.theme = name;
+  applyTheme(name);
+  renderTheme();
+  markDirty();
+}
+
+// ═══ 字体大小 ═══
+function renderFontSize() {
+  document.querySelectorAll('#fontSizeGroup .font-size-btn').forEach(btn => {
+    btn.classList.toggle('active', btn.dataset.size === settings.visual.fontSize);
+  });
+  applyFontSize(settings.visual.fontSize);
+}
+
+function setFontSize(size) {
+  settings.visual.fontSize = size;
+  applyFontSize(size);
+  renderFontSize();
+  markDirty();
+}
+
+function applyFontSize(size) {
+  const map = { small: '14px', standard: '16px', large: '18px' };
+  document.documentElement.style.fontSize = map[size] || '16px';
+}
+
+// ═══ 初始化 ═══
+function init() {
+  loadSettings();
+  document.getElementById('nav-container').innerHTML = renderNav('panel');
+  renderAll();
+  applyTheme(settings.visual.theme);
+  applyFontSize(settings.visual.fontSize);
+}
+
+init();
+</script>
+</body>
+</html>

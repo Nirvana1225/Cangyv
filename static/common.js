@@ -115,6 +115,8 @@ function renderNav(activePage) {
         { path: '/chat', label: '聊天', icon: '💬', id: 'chat' },
         { path: '/diary', label: '日记', icon: '📖', id: 'diary' },
         { path: '/ecg', label: '心电图', icon: '💓', id: 'ecg' },
+        { path: '/reader', label: '共读', icon: '📚', id: 'reader' },
+        { path: '/cinema', label: '陪看', icon: '🎬', id: 'cinema' },
         { path: '/panel', label: '面板', icon: '⚙️', id: 'panel' },
     ];
     return `<nav class="main-nav">

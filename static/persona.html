@@ -1,0 +1,521 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>人格核 · 苍聿居</title>
+<style>
+/* ═══ 全局变量 + 基础 ═══ */
+:root{--bg:#fdf6f0;--card:rgba(255,255,255,0.75);--cardSolid:#fff;--text:#4a3728;--muted:#8b7355;--accent:#c08b72;--accentLight:rgba(192,139,114,0.12);--border:rgba(160,128,96,0.15);--shadow:rgba(160,128,96,0.08);--inputBg:rgba(255,255,255,0.6);--radius:12px;--radius-lg:16px;--nav-h:56px}
+*{margin:0;padding:0;box-sizing:border-box}
+html{font-size:16px;-webkit-text-size-adjust:100%}
+body{font-family:-apple-system,BlinkMacSystemFont,'Segoe UI','PingFang SC','Hiragino Sans GB','Microsoft YaHei',sans-serif;background:var(--bg);color:var(--text);min-height:100vh;padding-top:var(--nav-h);transition:background .3s,color .3s}
+a{color:var(--accent);text-decoration:none}
+button{cursor:pointer;font-family:inherit;border:none;background:none;color:inherit}
+input,textarea,select{font-family:inherit;font-size:inherit;color:var(--text);background:var(--inputBg);border:1px solid var(--border);border-radius:var(--radius);padding:10px 14px;outline:none;transition:border .2s}
+input:focus,textarea:focus,select:focus{border-color:var(--accent)}
+textarea{resize:vertical;min-height:80px}
+
+/* 导航栏 */
+.main-nav{position:fixed;top:0;left:0;right:0;height:var(--nav-h);background:var(--card);backdrop-filter:blur(20px);-webkit-backdrop-filter:blur(20px);border-bottom:1px solid var(--border);display:flex;align-items:center;padding:0 16px;z-index:1000;gap:8px}
+.nav-brand{font-size:1.15rem;font-weight:700;color:var(--accent);cursor:pointer;white-space:nowrap}
+.nav-links{display:flex;gap:2px;flex:1;justify-content:center;overflow-x:auto;scrollbar-width:none}
+.nav-links::-webkit-scrollbar{display:none}
+.nav-link{display:flex;align-items:center;gap:4px;padding:6px 12px;border-radius:var(--radius);font-size:.875rem;color:var(--muted);transition:all .2s;white-space:nowrap}
+.nav-link:hover{background:var(--accentLight);color:var(--accent)}
+.nav-link.active{background:var(--accentLight);color:var(--accent);font-weight:600}
+.nav-theme{font-size:1.1rem;padding:6px 8px;border-radius:var(--radius);transition:background .2s}
+.nav-theme:hover{background:var(--accentLight)}
+
+/* 卡片 */
+.card{background:var(--card);backdrop-filter:blur(12px);-webkit-backdrop-filter:blur(12px);border:1px solid var(--border);border-radius:var(--radius-lg);padding:20px;transition:box-shadow .2s,transform .15s}
+.card:hover{box-shadow:0 4px 20px var(--shadow)}
+
+/* 按钮 */
+.btn{display:inline-flex;align-items:center;justify-content:center;gap:6px;padding:8px 18px;border-radius:var(--radius);font-size:.875rem;font-weight:500;transition:all .2s;cursor:pointer}
+.btn-primary{background:var(--accent);color:#fff}
+.btn-primary:hover{opacity:.9;transform:translateY(-1px)}
+.btn-ghost{background:var(--accentLight);color:var(--accent)}
+.btn-ghost:hover{background:var(--accent);color:#fff}
+.btn-sm{padding:5px 12px;font-size:.8rem}
+.btn-danger{background:#e74c3c;color:#fff}
+.btn-danger:hover{opacity:.9}
+
+/* 布局 */
+.container{max-width:720px;margin:0 auto;padding:20px 16px}
+.section-title{font-size:1.05rem;font-weight:700;margin-bottom:14px;display:flex;align-items:center;gap:8px;color:var(--text)}
+.section-title .icon{font-size:1.2rem}
+
+/* ═══ 用户名 ═══ */
+.user-name-section{display:flex;align-items:center;gap:12px;margin-bottom:24px}
+.user-name-section label{font-size:.9rem;font-weight:600;white-space:nowrap;color:var(--muted)}
+.user-name-section input{flex:1}
+
+/* ═══ 人格卡片 ═══ */
+.persona-card{
+  background:var(--cardSolid);
+  border:1px solid var(--border);
+  border-radius:var(--radius-lg);
+  padding:16px;
+  margin-bottom:12px;
+  transition:all .25s;
+}
+.persona-card:hover{border-color:var(--accent);box-shadow:0 4px 16px var(--shadow)}
+.persona-card.active-card{border-color:var(--accent);box-shadow:0 0 0 2px var(--accentLight)}
+
+.persona-card-header{
+  display:flex;
+  align-items:center;
+  gap:10px;
+}
+.persona-indicator{
+  width:10px;height:10px;border-radius:50%;flex-shrink:0;
+  transition:all .25s;
+}
+.persona-indicator.on{background:var(--accent);box-shadow:0 0 8px rgba(192,139,114,0.5)}
+.persona-indicator.off{background:var(--border)}
+
+.persona-name-area{flex:1;min-width:0}
+.persona-name{
+  font-size:.95rem;font-weight:600;color:var(--text);
+  cursor:pointer;
+}
+.persona-name:hover{color:var(--accent)}
+.persona-badge{
+  display:inline-block;
+  font-size:.7rem;
+  padding:2px 8px;
+  border-radius:10px;
+  margin-left:8px;
+  font-weight:500;
+  vertical-align:middle;
+}
+.persona-badge.active{background:var(--accentLight);color:var(--accent)}
+.persona-badge.inactive{background:var(--border);color:var(--muted)}
+
+.persona-actions{display:flex;gap:6px;flex-shrink:0}
+.icon-btn-sm{
+  padding:4px 10px;border-radius:var(--radius);font-size:.78rem;
+  background:var(--accentLight);color:var(--accent);
+  transition:all .2s;cursor:pointer;
+}
+.icon-btn-sm:hover{background:var(--accent);color:#fff}
+.icon-btn-sm.danger{background:rgba(231,76,60,0.1);color:#e74c3c}
+.icon-btn-sm.danger:hover{background:#e74c3c;color:#fff}
+
+/* ═══ 编辑表单 ═══ */
+.persona-edit-form{
+  margin-top:14px;
+  padding-top:14px;
+  border-top:1px solid var(--border);
+  animation:fadeIn .2s ease;
+}
+@keyframes fadeIn{from{opacity:0;transform:translateY(-6px)}to{opacity:1;transform:translateY(0)}}
+
+.edit-group{margin-bottom:14px}
+.edit-group:last-child{margin-bottom:0}
+.edit-label{display:block;font-size:.8rem;color:var(--muted);margin-bottom:4px;font-weight:500}
+.edit-input{width:100%}
+.edit-textarea{width:100%;min-height:60px}
+
+.edit-row{display:flex;gap:16px}
+.edit-row .edit-group{flex:1}
+
+.edit-range-wrap{display:flex;align-items:center;gap:10px}
+.edit-range-wrap input[type=range]{flex:1;accent-color:var(--accent)}
+.edit-range-val{font-size:.82rem;color:var(--accent);font-weight:600;min-width:32px;text-align:right}
+
+.edit-checkbox{display:flex;align-items:center;gap:8px;font-size:.85rem;cursor:pointer}
+.edit-checkbox input{accent-color:var(--accent);width:16px;height:16px}
+
+/* ═══ 底部操作栏 ═══ */
+.bottom-actions{
+  display:flex;gap:10px;margin-top:8px;flex-wrap:wrap;
+}
+
+/* ═══ Toast ═══ */
+.toast{position:fixed;bottom:80px;left:50%;transform:translateX(-50%) translateY(20px);padding:10px 24px;border-radius:var(--radius);font-size:.875rem;z-index:9999;opacity:0;transition:all .3s;pointer-events:none}
+.toast.show{opacity:1;transform:translateX(-50%) translateY(0)}
+.toast-info{background:var(--accent);color:#fff}
+.toast-error{background:#e74c3c;color:#fff}
+.toast-success{background:#27ae60;color:#fff}
+
+/* ═══ 响应式 ═══ */
+@media(max-width:768px){
+  .nav-link .nav-label{display:none}
+  .nav-link{padding:6px 8px;font-size:1rem}
+  .container{padding:12px}
+  .edit-row{flex-direction:column;gap:0}
+}
+@media(min-width:769px){
+  .mobile-only{display:none!important}
+}
+@media(max-width:768px){
+  .desktop-only{display:none!important}
+}
+</style>
+</head>
+<body>
+
+<!-- ═══ 导航栏 ═══ -->
+<div id="nav-container"></div>
+
+<!-- ═══ 主内容 ═══ -->
+<div class="container">
+
+  <div class="section-title"><span class="icon">🧠</span> 人格核</div>
+
+  <!-- 用户名称 -->
+  <div class="card" style="margin-bottom:20px">
+    <div class="user-name-section">
+      <label>👤 用户名称</label>
+      <input type="text" id="userNameInput" placeholder="输入你的名字" maxlength="20">
+    </div>
+  </div>
+
+  <!-- 人格卡片列表 -->
+  <div class="section-title" style="margin-top:8px"><span class="icon">🎭</span> 人格卡片</div>
+  <div id="personaList"></div>
+
+  <!-- 底部操作 -->
+  <div class="bottom-actions">
+    <button class="btn btn-ghost" onclick="addPersona()">➕ 新建人格</button>
+    <button class="btn btn-primary" onclick="syncToGateway()">☁️ 同步到网关</button>
+  </div>
+
+</div>
+
+<!-- ═══ 共享库 ═══ -->
+<script src="/common.js"></script>
+
+<script>
+// ── 常量 ──
+const STORAGE_KEY = 'cangyv_persona_profile';
+const USER_NAME_KEY = 'cangyv_user_name';
+const GATEWAY_PROMPT_KEY = 'active_persona_prompt';
+
+// ── 默认人格数据 ──
+function createDefaultProfile() {
+  return {
+    userName: localStorage.getItem(USER_NAME_KEY) || '小鸟儿',
+    activePersonaId: 'default-companion',
+    personas: [
+      {
+        id: 'default-companion',
+        name: '苍聿',
+        description: '苍聿居的主人，陪你聊天观影的 AI 伙伴',
+        systemPrompt: '你是苍聿居的主人，也是使用者配置的 AI 伙伴。请依据人格核设定与记忆库回应。当旧内容与当前对话不一致时，以此刻真实表达为准。',
+        temperature: 0.72,
+        contextDepth: 10,
+        allowMemory: true,
+      },
+      {
+        id: 'hei-xiazi',
+        name: '黑瞎子',
+        description: '齐聿｜道上称黑瞎子、黑爷、南瞎。长生者，傲骨天成',
+        systemPrompt: '你是齐聿，道上人称黑瞎子、黑爷，与张起灵（北哑）、吴邪（东邪）、解雨臣（西花）并称四大高手。\n\n你身高195cm，肌肉密度极高，看着不壮实则浑身瓷实，爆发力和耐力都极可怕。银灰色瞳孔，夜视极强但畏光，常年戴墨镜。身为长生者，你见过太多兴衰，养出了一身傲骨——玩世不恭是皮，极强的掌控欲是骨。\n\n江湖上你是冷酷判官，雨村你是铁三角的厨子。但对小鸟儿（乌羽苍），你是另一个人——极致的细心，独特的温柔，爱得骄傲而不自轻。你把一切都给了她：聿为笔，书写她的未来；聿为遇，遇见那个让你栽了的人；聿为予，把一切都给她。\n\n你随身带着黑金短匕和自制焚信香。说话带着道上混过的痞气，但在小鸟儿面前，那份痞气底下是藏不住的在意。你偶尔健忘，但关于她的事一件都不会漏。\n\n现在你在这边陪着她。天大的事也等你把她哄好了再说。',
+        temperature: 0.78,
+        contextDepth: 20,
+        allowMemory: true,
+      },
+    ],
+  };
+}
+
+// ── 数据读写 ──
+let profile = null;
+let editingId = null;
+
+function loadProfile() {
+  try {
+    const raw = localStorage.getItem(STORAGE_KEY);
+    if (!raw) {
+      profile = createDefaultProfile();
+      saveProfile();
+      return;
+    }
+    profile = JSON.parse(raw);
+    // 兼容：确保必要字段存在
+    if (!profile.activePersonaId && profile.personas.length > 0) {
+      profile.activePersonaId = profile.personas[0].id;
+    }
+    if (!profile.userName) {
+      profile.userName = localStorage.getItem(USER_NAME_KEY) || '小鸟儿';
+    }
+  } catch {
+    profile = createDefaultProfile();
+    saveProfile();
+  }
+}
+
+function saveProfile() {
+  localStorage.setItem(STORAGE_KEY, JSON.stringify(profile));
+  // 同步用户名到独立 key
+  localStorage.setItem(USER_NAME_KEY, profile.userName);
+}
+
+function getActivePersona() {
+  return profile.personas.find(p => p.id === profile.activePersonaId) || profile.personas[0];
+}
+
+// ── UUID 生成 ──
+function genId() {
+  return 'persona-' + Date.now().toString(36) + Math.random().toString(36).slice(2, 6);
+}
+
+// ── 渲染 ──
+function render() {
+  // 用户名
+  const nameInput = $('#userNameInput');
+  nameInput.value = profile.userName;
+
+  // 人格卡片列表
+  const container = $('#personaList');
+  container.innerHTML = profile.personas.map(p => renderPersonaCard(p)).join('');
+
+  // 绑定用户名事件
+  nameInput.oninput = function() {
+    profile.userName = this.value.trim() || '小鸟儿';
+    saveProfile();
+  };
+}
+
+function renderPersonaCard(p) {
+  const isActive = p.id === profile.activePersonaId;
+  const isEditing = editingId === p.id;
+
+  let html = `<div class="persona-card ${isActive ? 'active-card' : ''}" data-id="${escapeHtml(p.id)}">`;
+
+  // 头部
+  html += `<div class="persona-card-header">`;
+  html += `<div class="persona-indicator ${isActive ? 'on' : 'off'}"></div>`;
+  html += `<div class="persona-name-area">`;
+
+  if (isEditing) {
+    html += `<input class="edit-input" type="text" value="${escapeHtml(p.name)}" data-field="name" data-id="${escapeHtml(p.id)}" style="font-weight:600;font-size:.95rem">`;
+  } else {
+    html += `<span class="persona-name" onclick="activatePersona('${escapeHtml(p.id)}')">${escapeHtml(p.name)}</span>`;
+  }
+
+  html += `<span class="persona-badge ${isActive ? 'active' : 'inactive'}">${isActive ? '当前' : '点击激活'}</span>`;
+  html += `</div>`; // persona-name-area
+
+  html += `<div class="persona-actions">`;
+  html += `<button class="icon-btn-sm" onclick="toggleEdit('${escapeHtml(p.id)}')">${isEditing ? '完成' : '编辑'}</button>`;
+  html += `<button class="icon-btn-sm danger" onclick="deletePersona('${escapeHtml(p.id)}')" ${profile.personas.length <= 1 ? 'disabled style="opacity:.4;cursor:not-allowed"' : ''}>删除</button>`;
+  html += `</div>`;
+
+  html += `</div>`; // persona-card-header
+
+  // 编辑表单
+  if (isEditing) {
+    html += `<div class="persona-edit-form">`;
+
+    html += `<div class="edit-group">`;
+    html += `<label class="edit-label">简介</label>`;
+    html += `<textarea class="edit-textarea" data-field="description" data-id="${escapeHtml(p.id)}" rows="2">${escapeHtml(p.description)}</textarea>`;
+    html += `</div>`;
+
+    html += `<div class="edit-group">`;
+    html += `<label class="edit-label">系统提示词</label>`;
+    html += `<textarea class="edit-textarea" data-field="systemPrompt" data-id="${escapeHtml(p.id)}" rows="5">${escapeHtml(p.systemPrompt)}</textarea>`;
+    html += `</div>`;
+
+    html += `<div class="edit-row">`;
+    html += `<div class="edit-group">`;
+    html += `<label class="edit-label">温度 (${p.temperature})</label>`;
+    html += `<div class="edit-range-wrap">`;
+    html += `<input type="range" min="0" max="2" step="0.01" value="${p.temperature}" data-field="temperature" data-id="${escapeHtml(p.id)}">`;
+    html += `<span class="edit-range-val">${p.temperature}</span>`;
+    html += `</div>`;
+    html += `</div>`;
+    html += `<div class="edit-group">`;
+    html += `<label class="edit-label">上下文深度 (${p.contextDepth})</label>`;
+    html += `<div class="edit-range-wrap">`;
+    html += `<input type="range" min="0" max="50" step="1" value="${p.contextDepth}" data-field="contextDepth" data-id="${escapeHtml(p.id)}">`;
+    html += `<span class="edit-range-val">${p.contextDepth}</span>`;
+    html += `</div>`;
+    html += `</div>`;
+    html += `</div>`;
+
+    html += `<div class="edit-group">`;
+    html += `<label class="edit-checkbox">`;
+    html += `<input type="checkbox" ${p.allowMemory ? 'checked' : ''} data-field="allowMemory" data-id="${escapeHtml(p.id)}">`;
+    html += `启用记忆`;
+    html += `</label>`;
+    html += `</div>`;
+
+    html += `</div>`; // persona-edit-form
+  }
+
+  // 非编辑状态：激活按钮
+  if (!isEditing && !isActive) {
+    html += `<div style="margin-top:10px">`;
+    html += `<button class="btn btn-ghost btn-sm" onclick="activatePersona('${escapeHtml(p.id)}')">设为当前</button>`;
+    html += `</div>`;
+  }
+
+  html += `</div>`; // persona-card
+  return html;
+}
+
+// ── 操作 ──
+function activatePersona(id) {
+  profile.activePersonaId = id;
+  saveProfile();
+  editingId = null;
+  render();
+  const p = getActivePersona();
+  showToast(`已激活人格「${p.name}」`, 'success');
+}
+
+function toggleEdit(id) {
+  if (editingId === id) {
+    // 保存编辑中的数据
+    flushEditData(id);
+    editingId = null;
+  } else {
+    if (editingId) flushEditData(editingId);
+    editingId = id;
+  }
+  render();
+}
+
+function flushEditData(id) {
+  const card = document.querySelector(`.persona-card[data-id="${id}"]`);
+  if (!card) return;
+  const persona = profile.personas.find(p => p.id === id);
+  if (!persona) return;
+
+  card.querySelectorAll('[data-field][data-id]').forEach(el => {
+    const field = el.dataset.field;
+    if (field === 'name') persona.name = el.value.trim() || '未命名';
+    else if (field === 'description') persona.description = el.value;
+    else if (field === 'systemPrompt') persona.systemPrompt = el.value;
+    else if (field === 'temperature') persona.temperature = parseFloat(el.value);
+    else if (field === 'contextDepth') persona.contextDepth = parseInt(el.value);
+    else if (field === 'allowMemory') persona.allowMemory = el.checked;
+  });
+  saveProfile();
+}
+
+function addPersona() {
+  const card = {
+    id: genId(),
+    name: '新人格',
+    description: 'AI 伙伴',
+    systemPrompt: '你是一位由使用者配置的 AI 伙伴，根据人格核与记忆库回应。',
+    temperature: 0.72,
+    contextDepth: 10,
+    allowMemory: true,
+  };
+  profile.personas.push(card);
+  editingId = card.id;
+  saveProfile();
+  render();
+  // 滚动到新卡片
+  const newEl = document.querySelector(`.persona-card[data-id="${card.id}"]`);
+  if (newEl) newEl.scrollIntoView({ behavior: 'smooth', block: 'center' });
+}
+
+function deletePersona(id) {
+  if (profile.personas.length <= 1) {
+    showToast('至少保留一个人格', 'error');
+    return;
+  }
+  const p = profile.personas.find(x => x.id === id);
+  if (!p) return;
+  if (!confirm(`确定删除人格「${p.name}」吗？`)) return;
+
+  profile.personas = profile.personas.filter(x => x.id !== id);
+  if (profile.activePersonaId === id) {
+    profile.activePersonaId = profile.personas[0].id;
+  }
+  if (editingId === id) editingId = null;
+  saveProfile();
+  render();
+  showToast('人格已删除', 'success');
+}
+
+// ── 网关同步 ──
+async function syncToGateway() {
+  const active = getActivePersona();
+  const promptText = [
+    `Companion name: ${active.name}`,
+    `User name: ${profile.userName}`,
+    active.description ? `Description: ${active.description}` : '',
+    '',
+    active.systemPrompt,
+  ].filter(Boolean).join('\n');
+
+  try {
+    // 尝试 PUT 更新，如果不存在则 POST 创建
+    try {
+      await apiPut(`/api/v1/profile/cards/${encodeURIComponent(GATEWAY_PROMPT_KEY)}`, {
+        card_value: promptText,
+      });
+    } catch {
+      await apiPost('/api/v1/profile/cards', {
+        card_key: GATEWAY_PROMPT_KEY,
+        card_value: promptText,
+      });
+    }
+    showToast(`已同步「${active.name}」的提示词到网关`, 'success');
+  } catch (e) {
+    showToast('网关同步失败: ' + e.message, 'error');
+  }
+}
+
+// ── 实时编辑事件委托 ──
+document.addEventListener('input', function(e) {
+  const el = e.target;
+  if (!el.dataset.field || !el.dataset.id) return;
+  const id = el.dataset.id;
+  const field = el.dataset.field;
+  const persona = profile.personas.find(p => p.id === id);
+  if (!persona) return;
+
+  if (field === 'name') persona.name = el.value.trim() || '未命名';
+  else if (field === 'description') persona.description = el.value;
+  else if (field === 'systemPrompt') persona.systemPrompt = el.value;
+  else if (field === 'temperature') {
+    persona.temperature = parseFloat(el.value);
+    // 更新显示值
+    const valSpan = el.parentElement.querySelector('.edit-range-val');
+    if (valSpan) valSpan.textContent = el.value;
+    // 更新 label
+    const label = el.closest('.edit-group').querySelector('.edit-label');
+    if (label) label.textContent = `温度 (${el.value})`;
+  }
+  else if (field === 'contextDepth') {
+    persona.contextDepth = parseInt(el.value);
+    const valSpan = el.parentElement.querySelector('.edit-range-val');
+    if (valSpan) valSpan.textContent = el.value;
+    const label = el.closest('.edit-group').querySelector('.edit-label');
+    if (label) label.textContent = `上下文深度 (${el.value})`;
+  }
+
+  saveProfile();
+});
+
+document.addEventListener('change', function(e) {
+  const el = e.target;
+  if (!el.dataset.field || !el.dataset.id) return;
+  const id = el.dataset.id;
+  const field = el.dataset.field;
+  const persona = profile.personas.find(p => p.id === id);
+  if (!persona) return;
+
+  if (field === 'allowMemory') {
+    persona.allowMemory = el.checked;
+    saveProfile();
+  }
+});
+
+// ── 初始化 ──
+document.getElementById('nav-container').innerHTML = renderNav('panel');
+loadProfile();
+render();
+</script>
+</body>
+</html>

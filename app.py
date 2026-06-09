@@ -39,6 +39,18 @@ def device_page():
 def reader_page():
     return send_from_directory("static", "reader.html")
 
+@app.route("/cinema")
+def cinema_page():
+    return send_from_directory("static", "cinema.html")
+
+@app.route("/persona")
+def persona_page():
+    return send_from_directory("static", "persona.html")
+
+@app.route("/settings")
+def settings_page():
+    return send_from_directory("static", "settings.html")
+
 # ── Public 资源 ──
 @app.route("/public/<path:filename>")
 def public_files(filename):
