@@ -490,14 +490,6 @@ document.addEventListener('click', function(e) {
         document.getElementById('statusDropdown').classList.remove('active');
     }
 });
-// ── 状态筛选切换 ──
-function switchStatus(btn) {
-    state.statusFilter = btn.dataset.status;
-    // 更新状态按钮样式
-    document.querySelectorAll('[data-status]').forEach(t => t.classList.remove('active'));
-    btn.classList.add('active');
-    loadMemories(true);
-}
 
 // ── 搜索 ──
 let searchTimer = null;
