@@ -738,8 +738,8 @@ function renderDiaryCard(d) {
 
     // 卡片点击：加密日记点击弹出解锁框，未加密点击展开/收起
     const clickAttr = showLocked
-        ? ' data-action="unlock-card" data-id="' + d.id + '"'
-        : ' data-action="expand" data-id="' + d.id + '"';
+        ? ' data-card-action="unlock-card" data-id="' + d.id + '"'
+        : ' data-card-action="expand" data-id="' + d.id + '"';
 
     // 加密日记卡片加特殊样式
     const cardClass = 'diary-card' + (isExpanded ? ' expanded' : '') + (showLocked ? ' locked' : '');
@@ -766,7 +766,7 @@ document.addEventListener('click', function(e) {
     const btn = e.target.closest('[data-action]');
     if (!btn) {
         // 检查是否点击了卡片本身（展开/收起）
-        const card = e.target.closest('.diary-card[data-action="expand"]');
+        const card = e.target.closest('.diary-card[data-card-action="expand"]');
         if (card) {
             const id = card.getAttribute('data-id');
             if (id) toggleExpand(id);
