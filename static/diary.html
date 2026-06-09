@@ -5,8 +5,8 @@
 <meta name="viewport" content="width=device-width, initial-scale=1.0">
 <title>日记 - 苍聿居</title>
 <link rel="manifest" href="/manifest.json">
-<style>${GLOBAL_CSS}
-
+<style id="global-css"></style>
+<style>
 /* ── 日记页面专属样式 ── */
 
 /* 页面头部 */
@@ -558,6 +558,11 @@ let expandedId = null;
 
 // ── 初始化 ──
 document.addEventListener('DOMContentLoaded', () => {
+    // 注入全局CSS
+    const globalStyle = document.getElementById('global-css');
+    if (globalStyle && typeof GLOBAL_CSS !== 'undefined') {
+        globalStyle.textContent = GLOBAL_CSS;
+    }
     initTheme();
     $('#nav-container').innerHTML = renderNav('diary');
     renderMoodSelector();

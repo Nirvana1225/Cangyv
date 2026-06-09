@@ -1,0 +1,306 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
+<title>苍聿居 · 桌宠</title>
+<link rel="manifest" href="/manifest.json">
+<style id="global-css"></style>
+<style>
+.pet-page { max-width: 800px; margin: 0 auto; padding: 16px; }
+
+/* 场景区域 */
+.pet-scene {
+    position: relative; width: 100%; height: 280px;
+    background: linear-gradient(180deg, #1a1a2e 0%, #16213e 60%, #0f3460 100%);
+    border-radius: var(--radius-lg); border: 1px solid var(--border);
+    overflow: hidden; margin-bottom: 16px;
+}
+.pet-scene .ground {
+    position: absolute; bottom: 0; left: 0; right: 0; height: 60px;
+    background: linear-gradient(180deg, #2a2a4a, #1e1e3a);
+    border-top: 2px solid rgba(124,108,240,0.2);
+}
+.pet-scene .stars { position: absolute; inset: 0; overflow: hidden; }
+.pet-scene .star {
+    position: absolute; width: 2px; height: 2px;
+    background: #fff; border-radius: 50%; animation: twinkle 3s infinite;
+}
+@keyframes twinkle { 0%,100%{opacity:.3} 50%{opacity:1} }
+
+.pet-canvas-wrap {
+    position: absolute; bottom: 60px; cursor: pointer;
+    transition: left 0.8s ease-in-out; image-rendering: pixelated;
+}
+.pet-canvas-wrap canvas { display: block; image-rendering: pixelated; }
+.pet-name-tag {
+    text-align: center; font-size: 0.7rem; color: rgba(255,255,255,0.7);
+    margin-top: 2px; text-shadow: 0 1px 3px rgba(0,0,0,0.5); font-weight: 600;
+}
+
+/* 宠物面板 */
+.pet-panels { display: grid; grid-template-columns: 1fr 1fr; gap: 12px; }
+.pet-panel {
+    background: var(--card); backdrop-filter: blur(12px);
+    border: 1px solid var(--border); border-radius: var(--radius-lg); padding: 16px;
+}
+.pet-panel-header { display: flex; align-items: center; gap: 8px; margin-bottom: 12px; }
+.pet-panel-header .pet-icon { font-size: 1.4rem; }
+.pet-panel-header h3 { font-size: 1rem; flex: 1; }
+.badge { font-size: 0.6rem; padding: 2px 6px; border-radius: 8px; font-weight: 600; }
+.badge.ai-action { background: rgba(124,108,240,0.2); color: #7c6cf0; }
+.badge.user-action { background: rgba(76,175,80,0.2); color: #4CAF50; }
+.badge.ai-care { background: rgba(233,30,99,0.15); color: #e91e63; }
+.badge.user-care { background: rgba(243,156,18,0.2); color: #f39c12; }
+
+/* 状态条 */
+.stat-row { display: flex; align-items: center; gap: 8px; margin-bottom: 8px; font-size: 0.8rem; }
+.stat-row .stat-icon { width: 20px; text-align: center; }
+.stat-row .stat-label { width: 36px; color: var(--muted); }
+.stat-bar { flex: 1; height: 8px; background: rgba(0,0,0,0.2); border-radius: 4px; overflow: hidden; }
+.stat-bar-fill { height: 100%; border-radius: 4px; transition: width 0.5s ease; }
+.stat-bar-fill.hunger { background: linear-gradient(90deg, #e74c3c, #f39c12); }
+.stat-bar-fill.mood { background: linear-gradient(90deg, #9b59b6, #e91e63); }
+.stat-bar-fill.energy { background: linear-gradient(90deg, #3498db, #2ecc71); }
+.stat-row .stat-val { width: 30px; text-align: right; color: var(--muted); font-size: 0.75rem; }
+
+/* 动作按钮 */
+.action-section { margin-top: 10px; }
+.action-section .section-label {
+    font-size: 0.7rem; color: var(--muted); margin-bottom: 6px;
+    display: flex; align-items: center; gap: 4px;
+}
+.pet-actions { display: flex; gap: 5px; flex-wrap: wrap; }
+.btn-act {
+    padding: 6px 10px; border-radius: var(--radius); font-size: 0.75rem; font-weight: 500;
+    transition: all .2s; cursor: pointer; border: 1px solid var(--border);
+    background: var(--accentLight); color: var(--accent);
+}
+.btn-act:hover { background: var(--accent); color: #fff; transform: translateY(-1px); }
+.btn-act:disabled { opacity: 0.3; cursor: not-allowed; transform: none; }
+.btn-act.danger { border-color: rgba(231,76,60,0.3); color: #e74c3c; background: rgba(231,76,60,0.1); }
+.btn-act.danger:hover { background: #e74c3c; color: #fff; }
+
+/* 状态标签 */
+.state-tag {
+    display: inline-block; padding: 2px 8px; border-radius: 8px;
+    font-size: 0.7rem; font-weight: 600; margin-left: auto;
+}
+.state-tag.idle { background: rgba(52,152,219,0.2); color: #3498db; }
+.state-tag.sleep { background: rgba(155,89,182,0.2); color: #9b59b6; }
+.state-tag.happy { background: rgba(46,204,113,0.2); color: #2ecc71; }
+.state-tag.scratch { background: rgba(231,76,60,0.2); color: #e74c3c; }
+.state-tag.eat { background: rgba(243,156,18,0.2); color: #f39c12; }
+.state-tag.tilt { background: rgba(52,152,219,0.2); color: #5dade2; }
+.state-tag.paw { background: rgba(46,204,113,0.2); color: #27ae60; }
+.state-tag.bite { background: rgba(192,57,43,0.2); color: #c0392b; }
+
+/* 日志 */
+.pet-log {
+    margin-top: 8px; max-height: 70px; overflow-y: auto;
+    font-size: 0.65rem; color: var(--muted);
+    border-top: 1px solid var(--border); padding-top: 6px;
+}
+.pet-log .log-entry { padding: 1px 0; opacity: 0.8; }
+
+/* 可行性 */
+.feasibility {
+    margin-top: 16px; background: var(--card); border: 1px solid var(--border);
+    border-radius: var(--radius-lg); padding: 16px;
+}
+.feasibility h3 { font-size: 0.95rem; margin-bottom: 10px; color: var(--accent); }
+.feasibility .item { display: flex; align-items: flex-start; gap: 8px; margin-bottom: 6px; font-size: 0.8rem; line-height: 1.5; }
+.feasibility .item .icon { font-size: 1rem; flex-shrink: 0; }
+
+@media (max-width: 768px) {
+    .pet-panels { grid-template-columns: 1fr; }
+    .pet-scene { height: 220px; }
+}
+</style>
+</head>
+<body>
+<div id="app"></div>
+<script src="/common.js"></script>
+<script src="/pet.js"></script>
+<script>
+document.getElementById('global-css').textContent = GLOBAL_CSS;
+document.getElementById('app').innerHTML = renderNav('pet') + `
+<div class="pet-page">
+    <div class="pet-scene" id="scene">
+        <div class="stars" id="stars"></div>
+        <div class="ground"></div>
+        <div class="pet-canvas-wrap" id="cat-wrap" style="left:25%">
+            <canvas id="cat-canvas"></canvas>
+            <div class="pet-name-tag">小狸</div>
+        </div>
+        <div class="pet-canvas-wrap" id="dog-wrap" style="left:60%">
+            <canvas id="dog-canvas"></canvas>
+            <div class="pet-name-tag">大墨</div>
+        </div>
+    </div>
+
+    <div class="pet-panels">
+        <!-- 狸花猫：AI饲养 + 用户控制动作 -->
+        <div class="pet-panel">
+            <div class="pet-panel-header">
+                <span class="pet-icon">🐱</span>
+                <h3>小狸</h3>
+                <span class="badge ai-care">AI饲养</span>
+                <span class="badge user-action">你操控</span>
+                <span class="state-tag idle" id="cat-state">idle</span>
+            </div>
+            <div class="stat-row"><span class="stat-icon">🍖</span><span class="stat-label">饱腹</span><div class="stat-bar"><div class="stat-bar-fill hunger" id="cat-hunger" style="width:70%"></div></div><span class="stat-val" id="cat-hunger-val">70</span></div>
+            <div class="stat-row"><span class="stat-icon">💖</span><span class="stat-label">心情</span><div class="stat-bar"><div class="stat-bar-fill mood" id="cat-mood" style="width:70%"></div></div><span class="stat-val" id="cat-mood-val">70</span></div>
+            <div class="stat-row"><span class="stat-icon">⚡</span><span class="stat-label">精力</span><div class="stat-bar"><div class="stat-bar-fill energy" id="cat-energy" style="width:70%"></div></div><span class="stat-val" id="cat-energy-val">70</span></div>
+
+            <div class="action-section">
+                <div class="section-label">🎮 你控制动作（AI负责喂食洗澡）</div>
+                <div class="pet-actions">
+                    <button class="btn-act" onclick="catAction('tilt')">🤔 歪头</button>
+                    <button class="btn-act" onclick="catAction('paw')">🤚 抬爪</button>
+                    <button class="btn-act" onclick="catAction('scratch')">🐾 抓人</button>
+                    <button class="btn-act danger" onclick="catAction('bite')">🦷 咬人</button>
+                    <button class="btn-act" onclick="catAction('happy')">😊 开心</button>
+                    <button class="btn-act" onclick="catAction('sleep')">😴 睡觉</button>
+                </div>
+            </div>
+            <div class="pet-log" id="cat-log"><div class="log-entry">🐱 小狸正在观察你...</div></div>
+        </div>
+
+        <!-- 大狗：用户饲养 + AI控制动作 -->
+        <div class="pet-panel">
+            <div class="pet-panel-header">
+                <span class="pet-icon">🕶️</span>
+                <h3>大墨</h3>
+                <span class="badge user-care">你饲养</span>
+                <span class="badge ai-action">AI操控</span>
+                <span class="state-tag idle" id="dog-state">idle</span>
+            </div>
+            <div class="stat-row"><span class="stat-icon">🍖</span><span class="stat-label">饱腹</span><div class="stat-bar"><div class="stat-bar-fill hunger" id="dog-hunger" style="width:70%"></div></div><span class="stat-val" id="dog-hunger-val">70</span></div>
+            <div class="stat-row"><span class="stat-icon">💖</span><span class="stat-label">心情</span><div class="stat-bar"><div class="stat-bar-fill mood" id="dog-mood" style="width:70%"></div></div><span class="stat-val" id="dog-mood-val">70</span></div>
+            <div class="stat-row"><span class="stat-icon">⚡</span><span class="stat-label">精力</span><div class="stat-bar"><div class="stat-bar-fill energy" id="dog-energy" style="width:70%"></div></div><span class="stat-val" id="dog-energy-val">70</span></div>
+
+            <div class="action-section">
+                <div class="section-label">🍖 你负责饲养（AI控制它的动作）</div>
+                <div class="pet-actions">
+                    <button class="btn-act" onclick="dogFeed()">🍖 喂食</button>
+                    <button class="btn-act" onclick="dogBathe()">🛁 洗澡</button>
+                    <button class="btn-act" onclick="dogPlay()">🎾 玩耍</button>
+                </div>
+            </div>
+            <div class="pet-log" id="dog-log"><div class="log-entry">🕶️ 大墨戴着墨镜看着你...</div></div>
+        </div>
+    </div>
+
+    <div class="feasibility">
+        <h3>📋 像素电子桌宠可行性评估</h3>
+        <div class="item"><span class="icon">✅</span><span><b>Canvas渲染</b>：32×32像素放大3倍，8种姿态精灵，全平台兼容</span></div>
+        <div class="item"><span class="icon">✅</span><span><b>双宠物隔离控制</b>：猫=AI饲养+用户操控动作，狗=用户饲养+AI操控动作</span></div>
+        <div class="item"><span class="icon">✅</span><span><b>动作系统</b>：歪头/抬爪/抓人/咬人/开心/睡觉，用户或AI均可触发</span></div>
+        <div class="item"><span class="icon">✅</span><span><b>饲养系统</b>：喂食/洗澡/玩耍，AI或用户负责，状态自动衰减</span></div>
+        <div class="item"><span class="icon">✅</span><span><b>移动端适配</b>：触摸按钮控制，响应式布局</span></div>
+        <div class="item"><span class="icon">⚠️</span><span><b>AI行为深度</b>：当前为简单随机，可接入聊天API让AI真正"思考"宠物该做什么</span></div>
+        <div class="item"><span class="icon">⚠️</span><span><b>毛色占位</b>：大狗毛色为占位色，待确定配色</span></div>
+        <div class="item"><span class="icon">💡</span><span><b>扩展</b>：宠物间互动（猫狗打架/和好）、装饰系统、迷你游戏、浮窗模式</span></div>
+    </div>
+</div>
+`;
+
+// ── 星星 ──
+const starsEl = document.getElementById('stars');
+for (let i = 0; i < 40; i++) {
+    const s = document.createElement('div');
+    s.className = 'star';
+    s.style.cssText = `left:${Math.random()*100}%;top:${Math.random()*60}%;animation-delay:${Math.random()*3}s;animation-duration:${2+Math.random()*2}s`;
+    starsEl.appendChild(s);
+}
+
+// ── 创建宠物 ──
+// 狸花猫：AI饲养 + 用户控制动作
+const cat = new PixelPet({
+    name: '小狸', type: 'cat',
+    caretaker: 'ai',          // AI喂食洗澡
+    actionController: 'user', // 用户控制动作
+    hunger: 70, mood: 70, energy: 70,
+    onStateChange(state) {
+        const el = document.getElementById('cat-state');
+        if (el) { el.textContent = state; el.className = 'state-tag ' + state; }
+    },
+    onStatsChange: (s) => updateUI('cat', s),
+    onActionLog(msg) { addLog('cat-log', '🐱 ' + msg); }
+});
+
+// 戴墨镜大狗：用户饲养 + AI控制动作
+const dog = new PixelPet({
+    name: '大墨', type: 'dog',
+    caretaker: 'user',        // 用户喂食洗澡
+    actionController: 'ai',   // AI控制动作
+    hunger: 70, mood: 70, energy: 70,
+    onStateChange(state) {
+        const el = document.getElementById('dog-state');
+        if (el) { el.textContent = state; el.className = 'state-tag ' + state; }
+    },
+    onStatsChange: (s) => updateUI('dog', s),
+    onActionLog(msg) { addLog('dog-log', '🕶️ ' + msg); }
+});
+
+// ── 动画器 ──
+const catAnim = new PetAnimator(document.getElementById('cat-canvas'), cat);
+const dogAnim = new PetAnimator(document.getElementById('dog-canvas'), dog);
+
+cat.start(); dog.start();
+catAnim.start(); dogAnim.start();
+
+// ── 用户控制猫的动作 ──
+function catAction(action) { cat.doAction(action); }
+
+// ── 用户饲养狗 ──
+function dogFeed() { if (!dog.feed()) showToast('你无法饲养小狸~', 'info'); }
+function dogBathe() { if (!dog.bathe()) showToast('你无法饲养小狸~', 'info'); }
+function dogPlay() { if (!dog.play()) showToast('你无法饲养小狸~', 'info'); }
+
+// 点击场景中的猫 → 用户控制动作
+document.getElementById('cat-wrap').addEventListener('click', () => cat.doAction('paw'));
+// 点击狗 → 无饲养权限提示
+document.getElementById('dog-wrap').addEventListener('click', () => {
+    showToast('大墨是AI操控的，你只能饲养它~', 'info');
+});
+
+// ── UI更新 ──
+function updateUI(prefix, s) {
+    const set = (id, v) => { const e = document.getElementById(id); if (e) e.style.width = v + '%'; };
+    const setV = (id, v) => { const e = document.getElementById(id); if (e) e.textContent = Math.round(v); };
+    set(prefix + '-hunger', s.hunger); setV(prefix + '-hunger-val', s.hunger);
+    set(prefix + '-mood', s.mood); setV(prefix + '-mood-val', s.mood);
+    set(prefix + '-energy', s.energy); setV(prefix + '-energy-val', s.energy);
+}
+
+function addLog(containerId, msg) {
+    const log = document.getElementById(containerId);
+    if (!log) return;
+    const entry = document.createElement('div');
+    entry.className = 'log-entry';
+    const now = new Date();
+    entry.textContent = `[${now.getHours().toString().padStart(2,'0')}:${now.getMinutes().toString().padStart(2,'0')}] ${msg}`;
+    log.appendChild(entry);
+    log.scrollTop = log.scrollHeight;
+    while (log.children.length > 20) log.removeChild(log.firstChild);
+}
+
+// ── 宠物随机漫步 ──
+setInterval(() => {
+    const cw = document.getElementById('cat-wrap');
+    const dw = document.getElementById('dog-wrap');
+    if (cw) cw.style.left = (15 + Math.random() * 30) + '%';
+    if (dw) dw.style.left = (50 + Math.random() * 30) + '%';
+}, 12000);
+
+// ── 清理 ──
+window.addEventListener('beforeunload', () => {
+    cat.stop(); dog.stop(); catAnim.stop(); dogAnim.stop();
+});
+
+if ('serviceWorker' in navigator) navigator.serviceWorker.register('/sw.js').catch(() => {});
+</script>
+</body>
+</html>

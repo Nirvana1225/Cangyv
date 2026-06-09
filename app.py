@@ -27,6 +27,10 @@ def ecg_page():
 def panel_page():
     return send_from_directory("static", "panel.html")
 
+@app.route("/pet")
+def pet_page():
+    return send_from_directory("static", "pet.html")
+
 @app.route("/qq")
 def qq_page():
     return send_from_directory("static", "qq.html")

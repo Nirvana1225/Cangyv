@@ -117,6 +117,7 @@ function renderNav(activePage) {
         { path: '/ecg', label: '心电图', icon: '💓', id: 'ecg' },
         { path: '/reader', label: '共读', icon: '📚', id: 'reader' },
         { path: '/cinema', label: '陪看', icon: '🎬', id: 'cinema' },
+        { path: '/pet', label: '桌宠', icon: '🐱', id: 'pet' },
         { path: '/panel', label: '面板', icon: '⚙️', id: 'panel' },
     ];
     return `<nav class="main-nav">
