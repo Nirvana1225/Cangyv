@@ -20,7 +20,7 @@ textarea{resize:vertical;min-height:60px}
 /* 导航栏 */
 .main-nav{position:fixed;top:0;left:0;right:0;height:var(--nav-h);background:var(--card);backdrop-filter:blur(20px);-webkit-backdrop-filter:blur(20px);border-bottom:1px solid var(--border);display:flex;align-items:center;padding:0 16px;z-index:1000;gap:8px}
 .nav-brand{font-size:1.15rem;font-weight:700;color:var(--accent);cursor:pointer;white-space:nowrap}
-.nav-links{display:flex;gap:2px;flex:1;justify-content:center;overflow-x:auto;scrollbar-width:none}
+.nav-links{display:flex;gap:2px;flex:1;justify-content:center;overflow-x:auto;scrollbar-width:none;-webkit-mask-image:linear-gradient(to right,black 90%,transparent 100%);mask-image:linear-gradient(to right,black 90%,transparent 100%)}
 .nav-links::-webkit-scrollbar{display:none}
 .nav-link{display:flex;align-items:center;gap:4px;padding:6px 12px;border-radius:var(--radius);font-size:.875rem;color:var(--muted);transition:all .2s;white-space:nowrap}
 .nav-link:hover{background:var(--accentLight);color:var(--accent)}
@@ -171,6 +171,9 @@ input[type=range]::-moz-range-thumb{width:24px;height:24px;border-radius:50%;bac
         <a href="/chat" class="nav-link">💬<span class="nav-label">聊天</span></a>
         <a href="/diary" class="nav-link">📖<span class="nav-label">日记</span></a>
         <a href="/ecg" class="nav-link active">💓<span class="nav-label">心电图</span></a>
+        <a href="/reader" class="nav-link">📚<span class="nav-label">共读</span></a>
+        <a href="/cinema" class="nav-link">🎬<span class="nav-label">陪看</span></a>
+        <a href="/pet" class="nav-link">🐾<span class="nav-label">桌宠</span></a>
         <a href="/panel" class="nav-link">⚙️<span class="nav-label">面板</span></a>
     </div>
     <button class="nav-theme" onclick="cycleTheme()" title="切换主题">🎨</button>
