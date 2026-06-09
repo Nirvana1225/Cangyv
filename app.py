@@ -1,6 +1,7 @@
 """Cangyv — 前端静态服务 + API代理"""
 from flask import Flask, send_from_directory, request, jsonify, Response, stream_with_context
 import requests as http_requests
+import json as _pet_json
 import os
 from config import GATEWAY_URL, DEFAULT_API_KEY, PORT, DEBUG
 
@@ -235,7 +236,6 @@ def health():
     return jsonify({"status": "ok", "service": "cangyv-frontend"})
 
 # ── 宠物状态 API（苍瞳 & 玄镜） ──
-import json as _pet_json
 from datetime import datetime as _dt, timezone as _tz
 
 @app.route("/api/pet", methods=["GET"])
