@@ -1,3 +1,6 @@
+
+/* ── 移动端导航栏 ── */
+@media (max-width: 768px) { .nav-label { display: none; } .nav-link { padding: 6px 10px; } }
 /**
  * Cangyv 前端共享工具库
  * API调用、主题切换、导航、时间格式化等
@@ -118,8 +121,7 @@ function renderNav(activePage) {
         { path: '/reader', label: '共读', icon: '📚', id: 'reader' },
         { path: '/cinema', label: '陪看', icon: '🎬', id: 'cinema' },
         { path: '/pet', label: '桌宠', icon: '🐱', id: 'pet' },
-        { path: '/apiconfig', label: 'API', icon: '🔌', id: 'apiconfig' },
-        { path: '/panel', label: '面板', icon: '⚙️', id: 'panel' },
+        { path: '/panel', label: '管理', icon: '⚙️', id: 'panel' },
     ];
     return `<nav class="main-nav">
         <div class="nav-brand" onclick="location.href='/'">苍聿居</div>
