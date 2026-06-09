@@ -32,7 +32,7 @@ textarea{resize:vertical;min-height:80px}
 .page-container{max-width:960px;margin:0 auto;padding:16px}
 
 /* ── 搜索栏 ── */
-.search-bar{position:relative;margin-bottom:16px}
+.search-bar{position:relative}
 .search-bar input{width:100%;padding:12px 16px 12px 44px;border-radius:var(--radius-lg);font-size:.95rem;background:var(--card);backdrop-filter:blur(12px);-webkit-backdrop-filter:blur(12px);border:1px solid var(--border);transition:all .25s}
 .search-bar input:focus{border-color:var(--accent);box-shadow:0 0 0 3px var(--accentLight)}
 .search-icon{position:absolute;left:14px;top:50%;transform:translateY(-50%);font-size:1.1rem;pointer-events:none;color:var(--muted)}
@@ -176,6 +176,15 @@ textarea{resize:vertical;min-height:80px}
 /* ── 入场动画 ── */
 @keyframes fadeUp{from{opacity:0;transform:translateY(12px)}to{opacity:1;transform:translateY(0)}}
 .fade-up{animation:fadeUp .35s ease-out both}
+
+/* status filter dropdown */
+.status-filter-btn{display:inline-flex;align-items:center;gap:4px;padding:6px 12px;border-radius:20px;font-size:.8rem;font-weight:500;background:var(--accent);color:#fff;border:none;cursor:pointer;white-space:nowrap;position:relative;transition:all .2s;flex-shrink:0}
+.status-filter-btn:hover{opacity:.9}
+.status-dropdown{position:absolute;top:calc(100% + 4px);right:0;background:var(--cardSolid);border:1px solid var(--border);border-radius:var(--radius);box-shadow:0 8px 32px var(--shadow);overflow:hidden;opacity:0;pointer-events:none;transform:translateY(-4px);transition:all .2s;z-index:100;min-width:130px}
+.status-dropdown.active{opacity:1;pointer-events:auto;transform:translateY(0)}
+.status-option{padding:10px 16px;font-size:.85rem;cursor:pointer;transition:background .15s;color:var(--text)}
+.status-option:hover{background:var(--accentLight)}
+.status-option.active{color:var(--accent);font-weight:600;background:var(--accentLight)}
 </style>
 </head>
 <body>
@@ -302,7 +311,7 @@ let state = {
     memories: [],
     category: '',
     searchQuery: '',
-    statusFilter: '',  // ''=全部, 'active'=活跃, 'archived'=归档
+    statusFilter: 'active',  // ''=全部, 'active'=活跃, 'archived'=归档
     offset: 0,
     limit: 20,
     loading: false,
@@ -461,9 +470,26 @@ function switchCategory(btn) {
     document.querySelectorAll('.cat-tab').forEach(t => t.classList.remove('active'));
     btn.classList.add('active');
 
+   // status filter dropdown
+function toggleStatusDropdown() {
+    document.getElementById('statusDropdown').classList.toggle('active');
+}
+function selectStatus(status) {
+    state.statusFilter = status;
+    var labels = {'': '\U0001f4cb All', 'active': '\U0001f525 Active', 'archived': '\U0001f4e6 Archived'};
+    document.getElementById('statusFilterLabel').textContent = labels[status] || '\U0001f525 Active';
+    document.getElementById('statusDropdown').classList.remove('active');
+    document.querySelectorAll('.status-option').forEach(function(o) { o.classList.remove('active'); });
+    var sel = document.querySelector('.status-option[data-status="' + status + '"]');
+    if (sel) sel.classList.add('active');
     loadMemories(true);
 }
-
+document.addEventListener('click', function(e) {
+    var container = document.querySelector('[style*="position:relative"]');
+    if (container && !container.contains(e.target)) {
+        document.getElementById('statusDropdown').classList.remove('active');
+    }
+});
 // ── 状态筛选切换 ──
 function switchStatus(btn) {
     state.statusFilter = btn.dataset.status;
