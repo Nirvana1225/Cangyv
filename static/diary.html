@@ -188,6 +188,15 @@
     font-size: .9rem;
 }
 
+/* 加密日记卡片特殊样式 */
+.diary-card.locked {
+    border-style: dashed;
+    opacity: .85;
+}
+.diary-card.locked:hover {
+    opacity: 1;
+}
+
 /* 卡片操作栏 */
 .diary-actions {
     display: flex;
@@ -511,6 +520,13 @@
             <div id="privacy-switch" class="toggle-switch" onclick="togglePrivacySwitch()"></div>
             <span>🔒 仅自己可见</span>
         </div>
+        <div class="privacy-toggle" style="margin-top:8px">
+            <div id="encrypt-switch" class="toggle-switch" onclick="toggleEncryptSwitch()"></div>
+            <span>🔐 加密保护（设密码后需密码才能查看）</span>
+        </div>
+        <div id="encrypt-password-row" style="display:none;margin-top:8px">
+            <input type="password" id="diary-encrypt-password" placeholder="设置查看密码" style="width:100%;padding:10px 14px;font-size:.88rem" autocomplete="new-password">
+        </div>
         <div class="modal-actions">
             <button class="btn btn-ghost" onclick="closeWriteModal()">取消</button>
             <button class="btn btn-primary" onclick="submitDiary()">发布</button>
@@ -567,6 +583,7 @@ const MOODS = [
 let diaries = [];
 let selectedMood = null;
 let isPrivate = false;
+let isEncrypted = false;
 let deleteTargetId = null;
 let isLocked = false;
 let expandedId = null;
@@ -653,29 +670,43 @@ function renderDiaryCard(d) {
     const locked = isDiaryLocked(d);
     const isUnlocked = unlockedDiaryIds.has(d.id);
     const showLocked = locked && !isUnlocked;
+    const author = d.author || d.role || '';
+    const isAi = author === 'ai' || author === 'assistant';
 
-    // 内容区
+    // 内容区：加密日记不渲染任何真实内容，只显示遮罩
     let contentHtml = '';
     if (showLocked) {
-        contentHtml = '<div class="diary-locked-overlay">🔒 已加密，需密码查看</div>';
+        contentHtml = '<div class="diary-locked-overlay">' +
+            '<div style="font-size:2rem;margin-bottom:8px">🔐</div>' +
+            '<div style="font-weight:600;margin-bottom:4px">此日记已加密</div>' +
+            '<div style="font-size:.82rem">' + (isAi ? 'AI 设置了密码保护，请向 AI 询问密码' : '需要密码才能查看') + '</div>' +
+        '</div>';
     } else if (isExpanded) {
-        contentHtml = '<div class="diary-content-full">' + escapeHtml(d.content) + '</div>';
+        contentHtml = '<div class="diary-content-full">' + escapeHtml(d.content || '') + '</div>';
     } else {
-        contentHtml = '<div class="diary-content-preview">' + escapeHtml(d.content) + '</div>';
+        // 未加密的预览：截取前100字
+        const preview = (d.content || '').substring(0, 100);
+        contentHtml = '<div class="diary-content-preview">' + escapeHtml(preview) + '</div>';
     }
 
-    // 操作栏（仅展开时显示）
+    // 操作栏（展开时显示，加密日记也显示解锁按钮）
     let actionsHtml = '';
-    if (isExpanded) {
+    if (isExpanded || showLocked) {
         actionsHtml = '<div class="diary-actions">';
-        if (locked) {
-            actionsHtml += '<button class="diary-action-btn" data-action="unlock" data-id="' + d.id + '">🔓 解锁</button>';
+        if (showLocked) {
+            // 加密状态：只显示解锁按钮
+            actionsHtml += '<button class="diary-action-btn" data-action="unlock" data-id="' + d.id + '">🔓 输入密码解锁</button>';
         } else {
-            actionsHtml += '<button class="diary-action-btn" data-action="lock" data-id="' + d.id + '">🔒 加密</button>';
+            // 已解锁/未加密状态
+            if (locked) {
+                actionsHtml += '<button class="diary-action-btn" data-action="unlock" data-id="' + d.id + '">🔓 解锁</button>';
+            } else {
+                actionsHtml += '<button class="diary-action-btn" data-action="lock" data-id="' + d.id + '">🔒 加密</button>';
+            }
+            actionsHtml += '<button class="diary-action-btn" data-action="privacy" data-id="' + d.id + '" data-private="' + (d.is_private ? '1' : '0') + '">' +
+                (d.is_private ? '🌐 公开' : '🔒 私密') + '</button>';
+            actionsHtml += '<button class="diary-action-btn danger" data-action="delete" data-id="' + d.id + '">🗑️ 删除</button>';
         }
-        actionsHtml += '<button class="diary-action-btn" data-action="privacy" data-id="' + d.id + '" data-private="' + (d.is_private ? '1' : '0') + '">' +
-            (d.is_private ? '🌐 公开' : '🔒 私密') + '</button>';
-        actionsHtml += '<button class="diary-action-btn danger" data-action="delete" data-id="' + d.id + '">🗑️ 删除</button>';
         actionsHtml += '</div>';
     }
 
@@ -705,15 +736,21 @@ function renderDiaryCard(d) {
         '</div>';
     }
 
-    // 卡片点击：加密状态不可展开
-    const clickAttr = showLocked ? '' : (' data-action="expand" data-id="' + d.id + '"');
+    // 卡片点击：加密日记点击弹出解锁框，未加密点击展开/收起
+    const clickAttr = showLocked
+        ? ' data-action="unlock-card" data-id="' + d.id + '"'
+        : ' data-action="expand" data-id="' + d.id + '"';
 
-    return '<div class="diary-card' + (isExpanded ? ' expanded' : '') + '"' + clickAttr + '>' +
+    // 加密日记卡片加特殊样式
+    const cardClass = 'diary-card' + (isExpanded ? ' expanded' : '') + (showLocked ? ' locked' : '');
+
+    return '<div class="' + cardClass + '"' + clickAttr + '>' +
         '<div class="diary-card-header">' +
             '<div class="diary-meta">' +
                 (moodEmoji ? '<span class="diary-mood">' + moodEmoji + '</span>' : '') +
                 '<span>' + escapeHtml(timeStr) + '</span>' +
                 (locked ? '<span style="margin-left:6px;font-size:.8rem;" title="已加密">🔒</span>' : '') +
+                (isAi ? '<span style="margin-left:4px;font-size:.75rem;padding:2px 6px;border-radius:8px;background:var(--accentLight);color:var(--accent)">AI</span>' : '') +
             '</div>' +
             '<span class="diary-privacy-icon" title="' + (d.is_private ? '私密' : '公开') + '">' + privacyIcon + '</span>' +
         '</div>' +
@@ -744,6 +781,10 @@ document.addEventListener('click', function(e) {
     switch (action) {
         case 'expand':
             toggleExpand(id);
+            break;
+        case 'unlock-card':
+            // 点击加密卡片直接弹出解锁框
+            handleDiaryLock(id, 'unlock');
             break;
         case 'lock':
             handleDiaryLock(id, 'lock');
@@ -802,19 +843,28 @@ function handleDiaryLock(id, action) {
 
 async function submitDiaryLock() {
     var pw = document.getElementById('lock-password').value.trim();
+    if (!pw) {
+        showToast('请输入密码', 'error');
+        return;
+    }
     try {
         if (lockAction === 'unlock') {
             await apiPost('/api/v1/diary/' + lockTargetId + '/unlock', { password: pw });
             unlockedDiaryIds.add(lockTargetId);
             showToast('解锁成功 🔓', 'success');
+            // 解锁后重新加载获取解密内容
+            await loadDiaries();
+            // 自动展开刚解锁的日记
+            expandedId = lockTargetId;
+            renderDiaries();
         } else {
             await apiPost('/api/v1/diary/' + lockTargetId + '/lock', { password: pw });
             showToast('已加密 🔒', 'success');
+            await loadDiaries();
         }
         closeLockModal();
         lockTargetId = null;
         lockAction = null;
-        await loadDiaries();
     } catch(e) {
         showToast('操作失败: ' + e.message, 'error');
     }
@@ -851,14 +901,29 @@ function togglePrivacySwitch() {
     sw.classList.toggle('active', isPrivate);
 }
 
+// ── 加密开关 ──
+function toggleEncryptSwitch() {
+    isEncrypted = !isEncrypted;
+    const sw = $('#encrypt-switch');
+    sw.classList.toggle('active', isEncrypted);
+    $('#encrypt-password-row').style.display = isEncrypted ? '' : 'none';
+    if (!isEncrypted) {
+        $('#diary-encrypt-password').value = '';
+    }
+}
+
 // ── 写日记模态框 ──
 function openWriteModal() {
     $('#write-modal').classList.add('active');
     $('#diary-content').value = '';
     selectedMood = null;
     isPrivate = false;
+    isEncrypted = false;
     $$('.mood-option').forEach(b => b.classList.remove('selected'));
     $('#privacy-switch').classList.remove('active');
+    $('#encrypt-switch').classList.remove('active');
+    $('#encrypt-password-row').style.display = 'none';
+    $('#diary-encrypt-password').value = '';
     setTimeout(() => $('#diary-content').focus(), 200);
 }
 
@@ -875,10 +940,19 @@ async function submitDiary() {
     const body = { content };
     if (selectedMood) body.mood = selectedMood;
     if (isPrivate) body.is_private = true;
+    if (isEncrypted) {
+        const password = $('#diary-encrypt-password').value.trim();
+        if (!password) {
+            showToast('请设置加密密码', 'error');
+            return;
+        }
+        body.password = password;
+        body.locked = true;
+    }
 
     try {
         await apiPost('/api/v1/diary', body);
-        showToast('日记发布成功 🎉', 'success');
+        showToast(isEncrypted ? '日记发布成功，已加密 🔐' : '日记发布成功 🎉', 'success');
         closeWriteModal();
         await loadDiaries();
     } catch (e) {
