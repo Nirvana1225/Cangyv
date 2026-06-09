@@ -192,8 +192,15 @@ textarea{resize:vertical;min-height:80px}
         <button class="search-clear" id="searchClear" onclick="clearSearch()">✕</button>
     </div>
 
-    <!-- 分类标签 -->
-    <div class="category-tabs" id="categoryTabs"></div>
+    <!-- 分类标签 + 状态筛选 -->
+    <div style="display:flex;align-items:center;gap:8px;margin-bottom:16px">
+        <div class="category-tabs" id="categoryTabs" style="flex:1"></div>
+        <div style="display:flex;gap:4px;flex-shrink:0">
+            <button class="cat-tab active" data-status="" onclick="switchStatus(this)">全部</button>
+            <button class="cat-tab" data-status="active" onclick="switchStatus(this)">活跃</button>
+            <button class="cat-tab" data-status="archived" onclick="switchStatus(this)">归档</button>
+        </div>
+    </div>
 
     <!-- 快捷操作 -->
     <div class="quick-actions">
@@ -295,6 +302,7 @@ let state = {
     memories: [],
     category: '',
     searchQuery: '',
+    statusFilter: '',  // ''=全部, 'active'=活跃, 'archived'=归档
     offset: 0,
     limit: 20,
     loading: false,
@@ -366,6 +374,7 @@ async function loadMemories(reset = false) {
         } else {
             const params = new URLSearchParams();
             if (state.category) params.set('category', state.category);
+            if (state.statusFilter) params.set('status', state.statusFilter);
             params.set('limit', state.limit);
             params.set('offset', state.offset);
             data = await apiGet(`/api/v1/memories?${params}`);
@@ -452,6 +461,15 @@ function switchCategory(btn) {
     document.querySelectorAll('.cat-tab').forEach(t => t.classList.remove('active'));
     btn.classList.add('active');
 
+    loadMemories(true);
+}
+
+// ── 状态筛选切换 ──
+function switchStatus(btn) {
+    state.statusFilter = btn.dataset.status;
+    // 更新状态按钮样式
+    document.querySelectorAll('[data-status]').forEach(t => t.classList.remove('active'));
+    btn.classList.add('active');
     loadMemories(true);
 }
 
