@@ -4,49 +4,9 @@
 <meta charset="UTF-8">
 <meta name="viewport" content="width=device-width, initial-scale=1.0">
 <title>人格核 · 苍聿居</title>
+<style id="global-css"></style>
 <style>
-/* ═══ 全局变量 + 基础 ═══ */
-:root{--bg:#fdf6f0;--card:rgba(255,255,255,0.75);--cardSolid:#fff;--text:#4a3728;--muted:#8b7355;--accent:#c08b72;--accentLight:rgba(192,139,114,0.12);--border:rgba(160,128,96,0.15);--shadow:rgba(160,128,96,0.08);--inputBg:rgba(255,255,255,0.6);--radius:12px;--radius-lg:16px;--nav-h:56px}
-*{margin:0;padding:0;box-sizing:border-box}
-html{font-size:16px;-webkit-text-size-adjust:100%}
-body{font-family:-apple-system,BlinkMacSystemFont,'Segoe UI','PingFang SC','Hiragino Sans GB','Microsoft YaHei',sans-serif;background:var(--bg);color:var(--text);min-height:100vh;padding-top:var(--nav-h);transition:background .3s,color .3s}
-a{color:var(--accent);text-decoration:none}
-button{cursor:pointer;font-family:inherit;border:none;background:none;color:inherit}
-input,textarea,select{font-family:inherit;font-size:inherit;color:var(--text);background:var(--inputBg);border:1px solid var(--border);border-radius:var(--radius);padding:10px 14px;outline:none;transition:border .2s}
-input:focus,textarea:focus,select:focus{border-color:var(--accent)}
-textarea{resize:vertical;min-height:80px}
-
-/* 导航栏 */
-.main-nav{position:fixed;top:0;left:0;right:0;height:var(--nav-h);background:var(--card);backdrop-filter:blur(20px);-webkit-backdrop-filter:blur(20px);border-bottom:1px solid var(--border);display:flex;align-items:center;padding:0 16px;z-index:1000;gap:8px}
-.nav-brand{font-size:1.15rem;font-weight:700;color:var(--accent);cursor:pointer;white-space:nowrap}
-.nav-links{display:flex;gap:2px;flex:1;justify-content:center;overflow-x:auto;scrollbar-width:none}
-.nav-links::-webkit-scrollbar{display:none}
-.nav-link{display:flex;align-items:center;gap:4px;padding:6px 12px;border-radius:var(--radius);font-size:.875rem;color:var(--muted);transition:all .2s;white-space:nowrap}
-.nav-link:hover{background:var(--accentLight);color:var(--accent)}
-.nav-link.active{background:var(--accentLight);color:var(--accent);font-weight:600}
-.nav-theme{font-size:1.1rem;padding:6px 8px;border-radius:var(--radius);transition:background .2s}
-.nav-theme:hover{background:var(--accentLight)}
-
-/* 卡片 */
-.card{background:var(--card);backdrop-filter:blur(12px);-webkit-backdrop-filter:blur(12px);border:1px solid var(--border);border-radius:var(--radius-lg);padding:20px;transition:box-shadow .2s,transform .15s}
-.card:hover{box-shadow:0 4px 20px var(--shadow)}
-
-/* 按钮 */
-.btn{display:inline-flex;align-items:center;justify-content:center;gap:6px;padding:8px 18px;border-radius:var(--radius);font-size:.875rem;font-weight:500;transition:all .2s;cursor:pointer}
-.btn-primary{background:var(--accent);color:#fff}
-.btn-primary:hover{opacity:.9;transform:translateY(-1px)}
-.btn-ghost{background:var(--accentLight);color:var(--accent)}
-.btn-ghost:hover{background:var(--accent);color:#fff}
-.btn-sm{padding:5px 12px;font-size:.8rem}
-.btn-danger{background:#e74c3c;color:#fff}
-.btn-danger:hover{opacity:.9}
-
-/* 布局 */
-.container{max-width:720px;margin:0 auto;padding:20px 16px}
-.section-title{font-size:1.05rem;font-weight:700;margin-bottom:14px;display:flex;align-items:center;gap:8px;color:var(--text)}
-.section-title .icon{font-size:1.2rem}
-
-/* ═══ 用户名 ═══ */
+/* ═══ 人格核页面专用 ═══ */
 .user-name-section{display:flex;align-items:center;gap:12px;margin-bottom:24px}
 .user-name-section label{font-size:.9rem;font-weight:600;white-space:nowrap;color:var(--muted)}
 .user-name-section input{flex:1}
@@ -513,7 +473,9 @@ document.addEventListener('change', function(e) {
 });
 
 // ── 初始化 ──
+document.getElementById('global-css').textContent = GLOBAL_CSS;
 document.getElementById('nav-container').innerHTML = renderNav('panel');
+initTheme();
 loadProfile();
 render();
 </script>
