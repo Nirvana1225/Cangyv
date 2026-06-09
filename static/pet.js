@@ -296,6 +296,13 @@ const DOG_IDLE = [
     '00000000000000000000000000000000',
 ];
 
+
+// 大狗变体生成器
+function dogVariant(base, modifyFn) {
+    const f = base.map(r => r.split(''));
+    modifyFn(f);
+    return f.map(r => r.join(''));
+}
 const DOG_HAPPY = dogVariant(DOG_IDLE, f => {
     // 眯眼：镜片反光消失，镜片变暗
     for (let y = 7; y <= 8; y++)
