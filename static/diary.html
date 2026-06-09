@@ -644,6 +644,10 @@ function renderDiaryCard(d) {
     let actionsHtml = '';
     if (isExpanded) {
         actionsHtml = `<div class="diary-actions">
+            ${d.locked
+                ? '<button class="diary-action-btn" onclick="event.stopPropagation(); handleDiaryLock('' + d.id + '', 'unlock')">🔓 解锁</button>'
+                : '<button class="diary-action-btn" onclick="event.stopPropagation(); handleDiaryLock('' + d.id + '', 'lock')">🔒 加密</button>'
+            }
             <button class="diary-action-btn" onclick="event.stopPropagation(); togglePrivacy(${d.id}, ${d.is_private})">
                 ${d.is_private ? '🌐 公开' : '🔒 私密'}
             </button>
