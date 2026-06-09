@@ -135,40 +135,59 @@ const CAT_SLEEP = (() => {
 })();
 
 // ── 大狗精灵 ──
-const DOG_IDLE = [
-    '00000000000000000000000000000000',
-    '0000000000AAAAAAA000000000000000',
-    '00000000AAAAABBBAAAAA00000000000',
-    '0000000AAABBBABBBABBBAA000000000',
-    '000000AAAABBBABBBABBBAAA00000000',
-    '000000AAADDDEEEDDDAAAAA00000000',
-    '000000AAADEEEEEEEDAAAAA00000000',
-    '000000AAADDEFFEDDDAAAAA00000000',
-    '0000000AAADDDDDDDAAAAAA00000000',
-    '0000000AAAABBBBBBAAAAAA00000000',
-    '000000AAAAABBBBBBAAAAAAA0000000',
-    '00000AAAAAABBBBBBAAAAAAA0000000',
-    '0000AAAAAABBBBBBBAAAAAAA0000000',
-    '0000AAAAABBBBBBBBBBAAAAA0000000',
-    '0000AAAAAAAAAAAAAAAAAAAAA0000000',
-    '0000AAAAABBBBBBBBBBAAAAA0000000',
-    '0000AAAAAAAAAAAAAAAAAAAAA0000000',
-    '0000AAAAABBBBBBBBBBAAAAA0000000',
-    '0000AAAAAAAAAAAAAAAAAAAAA0000000',
-    '00000AAAAABBBBBBBBAAAAAA00000000',
-    '000000AAAAABBBBBBAAAAAAA0000000',
-    '0000000AAAAABBBBAAAAAAA00000000',
-    '00000000AAAAGGGGGGAAAAAA0000000',
-    '000000000AAAGGGGGGAAAAA00000000',
-    '0000000000AAAAAAAABBBAA00000000',
-    '000000000000AAAAABBBBAA00000000',
-    '000000000000AAAAABBBBAA00000000',
-    '000000000000GGGABBBGGG000000000',
-    '00000000000GGGABBBGGG0000000000',
-    '000000000000GGGABGGG00000000000',
-    '0000000000000GGGGGGG00000000000',
-    '00000000000000000000000000000000',
-];
+// 戴墨镜大狗 idle - 正面蹲坐，戴墨镜
+const DOG_IDLE = (() => {
+    const s = Array(32).fill(null).map(() => Array(32).fill('0'));
+    // 耳朵（竖立尖耳）- 行1-5
+    s[1][7]='A'; s[1][8]='A'; s[1][23]='A'; s[1][24]='A';
+    s[2][6]='A'; s[2][7]='A'; s[2][8]='A'; s[2][23]='A'; s[2][24]='A'; s[2][25]='A';
+    s[3][5]='A'; s[3][6]='A'; s[3][7]='B'; s[3][8]='A'; s[3][9]='A';
+    s[3][22]='A'; s[3][23]='A'; s[3][24]='B'; s[3][25]='A'; s[3][26]='A';
+    s[4][5]='A'; s[4][6]='A'; s[4][7]='B'; s[4][8]='A'; s[4][9]='A';
+    s[4][22]='A'; s[4][23]='A'; s[4][24]='B'; s[4][25]='A'; s[4][26]='A';
+    s[5][5]='A'; s[5][6]='A'; s[5][7]='A'; s[5][8]='A'; s[5][9]='A';
+    s[5][22]='A'; s[5][23]='A'; s[5][24]='A'; s[5][25]='A'; s[5][26]='A';
+    // 头 - 行6-8
+    for (let x=6; x<=25; x++) { s[6][x]='A'; s[7][x]='A'; s[8][x]='A'; }
+    // 墨镜 - 行9-11
+    for (let x=6; x<=25; x++) { s[9][x]='D'; s[10][x]='D'; s[11][x]='D'; }
+    s[10][8]='E'; s[10][9]='E'; s[10][10]='E'; s[10][11]='E';  // 左镜片
+    s[11][8]='E'; s[11][9]='F'; s[11][10]='E'; s[11][11]='E';  // 左镜片+反光
+    s[10][20]='E'; s[10][21]='E'; s[10][22]='E'; s[10][23]='E';  // 右镜片
+    s[11][20]='E'; s[11][21]='E'; s[11][22]='E'; s[11][23]='E';  // 右镜片
+    // 墨镜下方 - 行12-15
+    for (let x=6; x<=25; x++) s[12][x]='A';
+    for (let x=7; x<=24; x++) s[13][x]='A';
+    for (let x=8; x<=23; x++) s[14][x]='A';
+    s[14][14]='B'; s[14][15]='B'; s[14][16]='B'; s[14][17]='B';  // 鼻子
+    for (let x=9; x<=22; x++) s[15][x]='A';
+    // 身体 - 行16-21
+    for (let x=7; x<=24; x++) s[16][x]='A';  // 脖子
+    for (let x=5; x<=26; x++) s[17][x]='A';  // 肩膀
+    s[17][5]='B'; s[17][26]='B';  // 深色肩部标记
+    for (let x=5; x<=26; x++) s[18][x]='A';
+    for (let x=10; x<=21; x++) s[18][x]='C';  // 肚子
+    for (let x=5; x<=26; x++) s[19][x]='A';
+    for (let x=10; x<=21; x++) s[19][x]='C';  // 肚子
+    for (let x=6; x<=25; x++) s[20][x]='A';
+    for (let x=11; x<=20; x++) s[20][x]='C';  // 肚子
+    for (let x=7; x<=24; x++) s[21][x]='A';  // 下身
+    // 前腿 - 行22-24
+    for (let x=7; x<=11; x++) s[22][x]='A';   // 左前腿
+    for (let x=20; x<=24; x++) s[22][x]='A';  // 右前腿
+    for (let x=12; x<=19; x++) s[22][x]='C';  // 腿间肚子
+    for (let x=7; x<=11; x++) s[23][x]='A';
+    for (let x=20; x<=24; x++) s[23][x]='A';
+    for (let x=12; x<=19; x++) s[23][x]='C';
+    for (let x=7; x<=11; x++) s[24][x]='G';   // 左爪
+    for (let x=20; x<=24; x++) s[24][x]='G';  // 右爪
+    // 尾巴（向右卷）
+    s[17][27]='A'; s[17][28]='B';
+    s[18][28]='A'; s[18][29]='B';
+    s[19][27]='A'; s[19][28]='B';
+    s[20][26]='B';
+    return s.map(r => r.join(''));
+})();
 // 狸花猫 happy - 眯眼微笑
 const CAT_HAPPY = (() => {
     const f = CAT_IDLE.map(r => r.split(''));
@@ -286,15 +305,15 @@ function dogVariant(base, modifyFn) {
 }
 
 const DOG_HAPPY = dogVariant(DOG_IDLE, f => {
-    // 眯眼：镜片反光消失
-    for (let y = 5; y <= 7; y++)
+    // 眯眼：镜片反光消失，镜片变暗
+    for (let y = 10; y <= 11; y++)
         for (let x = 0; x < 32; x++)
             if (f[y][x] === 'E' || f[y][x] === 'F') f[y][x] = 'D';
 });
 
 const DOG_SLEEP = dogVariant(DOG_IDLE, f => {
     // 闭眼 + 身体压低
-    for (let y = 5; y <= 7; y++)
+    for (let y = 10; y <= 11; y++)
         for (let x = 0; x < 32; x++)
             if (f[y][x] === 'E' || f[y][x] === 'F') f[y][x] = 'D';
     // 下移2行模拟趴下
@@ -308,7 +327,7 @@ const DOG_SLEEP = dogVariant(DOG_IDLE, f => {
 
 const DOG_EAT = dogVariant(DOG_IDLE, f => {
     // 低头：头部下移2行
-    for (let y = 9; y >= 1; y--)
+    for (let y = 15; y >= 1; y--)
         for (let x = 0; x < 32; x++)
             f[Math.min(y+2,31)][x] = f[y][x];
     for (let y = 0; y < 3; y++)
@@ -318,7 +337,7 @@ const DOG_EAT = dogVariant(DOG_IDLE, f => {
 
 const DOG_TILT = dogVariant(DOG_IDLE, f => {
     // 歪头：头部右偏1像素
-    for (let y = 1; y <= 8; y++) {
+    for (let y = 1; y <= 15; y++) {
         for (let x = 30; x >= 1; x--) f[y][x] = f[y][x-1];
         f[y][0] = '0';
     }
@@ -326,15 +345,15 @@ const DOG_TILT = dogVariant(DOG_IDLE, f => {
 
 const DOG_PAW = dogVariant(DOG_IDLE, f => {
     // 抬右前爪
-    for (let x = 17; x <= 20; x++) { f[19][x] = 'A'; f[20][x] = '0'; }
-    for (let x = 17; x <= 20; x++) f[16][x] = 'G';
+    for (let x = 20; x <= 24; x++) { f[23][x] = '0'; f[24][x] = '0'; }
+    for (let x = 21; x <= 24; x++) f[20][x] = 'G';
 });
 
 const DOG_BITE = dogVariant(DOG_IDLE, f => {
     // 张嘴 + 伸爪
-    for (let x = 14; x <= 17; x++) f[10][x] = 'B';
-    for (let x = 17; x <= 20; x++) { f[19][x] = 'A'; f[20][x] = '0'; }
-    for (let x = 17; x <= 20; x++) f[16][x] = 'G';
+    for (let x = 14; x <= 17; x++) f[15][x] = 'B';
+    for (let x = 20; x <= 24; x++) { f[23][x] = '0'; f[24][x] = '0'; }
+    for (let x = 21; x <= 24; x++) f[20][x] = 'G';
 });
 
 // ── 精灵映射 ──
