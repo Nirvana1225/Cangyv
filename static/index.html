@@ -430,7 +430,7 @@ function renderMemoryList() {
 
 function renderMemoryCard(m, index) {
     const stars = '★'.repeat(m.importance || 0) + '☆'.repeat(5 - (m.importance || 0));
-    const preview = (m.content || m.summary || '').replace(/<attachment[^>]*>[\s\S]*?<\/attachment>/g, '').replace(/<attachment[^>]*\/?>/g, '')'';
+    const preview = (m.content || m.summary || '').replace(/<attachment[^>]*>[\s\S]*?<\/attachment>/g, '').replace(/<attachment[^>]*\/?>/g, '');
     const isUnread = m.read_by_user === false;
     const tags = safeParseTags(m.tags).map(t => `<span class="tag">${escapeHtml(t)}</span>`).join('');
     const timeStr = formatTime(m.created_at);
