@@ -42,14 +42,6 @@
     margin-top: 2px; text-shadow: 0 1px 3px rgba(0,0,0,0.5); font-weight: 600;
 }
 
-/* 好感度气泡 */
-.affection-bubble {
-    position: absolute; top: -20px; left: 50%; transform: translateX(-50%);
-    font-size: 0.6rem; color: #e91e63; font-weight: 700;
-    pointer-events: none; white-space: nowrap;
-    text-shadow: 0 0 4px rgba(233,30,99,0.5);
-}
-
 /* 饥饿提示 */
 .hungry-alert {
     position: absolute; top: -28px; left: 50%; transform: translateX(-50%);
@@ -92,13 +84,30 @@
 }
 @keyframes ripple { 0%{transform:scale(0);opacity:1} 100%{transform:scale(2);opacity:0} }
 
-/* 浮动+数字 */
+/* 浮动数字 */
 .float-num {
     position: absolute; font-size: 0.8rem; font-weight: 700;
     pointer-events: none; z-index: 4;
     animation: floatUp 0.8s ease-out forwards;
 }
 @keyframes floatUp { 0%{opacity:1;transform:translateY(0)} 100%{opacity:0;transform:translateY(-30px)} }
+
+/* ── 游戏入口面板 ── */
+.game-entry-panel {
+    display: grid; grid-template-columns: repeat(4, 1fr); gap: 8px;
+    margin-bottom: 12px;
+}
+.game-entry {
+    display: flex; flex-direction: column; align-items: center; gap: 4px;
+    padding: 10px 6px; border-radius: var(--radius-lg);
+    background: var(--card); border: 1px solid var(--border);
+    cursor: pointer; transition: all .2s; text-align: center;
+}
+.game-entry:hover { transform: translateY(-2px); box-shadow: 0 4px 12px var(--shadow); border-color: var(--accent); }
+.game-entry:active { transform: scale(0.96); }
+.game-entry .game-icon { font-size: 1.6rem; }
+.game-entry .game-name { font-size: 0.7rem; font-weight: 600; color: var(--text); }
+.game-entry .game-desc { font-size: 0.55rem; color: var(--muted); line-height: 1.3; }
 
 /* ── 宠物面板 ── */
 .pet-panels { display: grid; grid-template-columns: 1fr 1fr; gap: 10px; }
@@ -144,8 +153,6 @@
 .btn-act:disabled { opacity: 0.3; cursor: not-allowed; transform: none; }
 .btn-act.danger { border-color: rgba(231,76,60,0.3); color: #e74c3c; background: rgba(231,76,60,0.1); }
 .btn-act.danger:hover { background: #e74c3c; color: #fff; }
-.btn-act.game { border-color: rgba(243,156,18,0.3); color: #f39c12; background: rgba(243,156,18,0.1); }
-.btn-act.game:hover { background: #f39c12; color: #fff; }
 
 /* 状态标签 */
 .state-tag {
@@ -169,17 +176,77 @@
 }
 .pet-log .log-entry { padding: 1px 0; opacity: 0.8; }
 
-/* 游戏工具栏 */
-.game-toolbar {
-    display: flex; gap: 6px; margin-bottom: 10px; flex-wrap: wrap;
-    align-items: center;
+/* ── 说明书模态框 ── */
+.guide-modal {
+    position: fixed; inset: 0; background: rgba(0,0,0,0.5); backdrop-filter: blur(4px);
+    z-index: 3000; display: flex; align-items: center; justify-content: center;
+    opacity: 0; pointer-events: none; transition: opacity 0.3s;
 }
-.game-toolbar .btn-act { font-size: 0.75rem; padding: 5px 10px; }
+.guide-modal.show { opacity: 1; pointer-events: auto; }
+.guide-content {
+    background: var(--cardSolid); border-radius: var(--radius-lg);
+    padding: 20px; width: 90%; max-width: 480px; max-height: 80vh;
+    overflow-y: auto; transform: scale(0.95); transition: transform 0.3s;
+}
+.guide-modal.show .guide-content { transform: scale(1); }
+.guide-content h2 { font-size: 1.1rem; margin-bottom: 12px; color: var(--accent); }
+.guide-content .guide-section { margin-bottom: 14px; }
+.guide-content .guide-section h3 { font-size: 0.85rem; color: var(--accent); margin-bottom: 6px; }
+.guide-content .guide-section p { font-size: 0.75rem; line-height: 1.6; color: var(--text); }
+.guide-content .pet-voice {
+    background: var(--accentLight); border-radius: var(--radius);
+    padding: 10px 14px; font-size: 0.75rem; line-height: 1.6;
+    color: var(--accent); font-style: italic; margin-bottom: 8px;
+}
+.guide-close {
+    display: block; margin: 12px auto 0; padding: 8px 24px;
+    border-radius: var(--radius); background: var(--accent); color: #fff;
+    font-size: 0.85rem; cursor: pointer; border: none;
+}
+
+/* ── 猜拳小游戏 ── */
+.rps-result {
+    position: absolute; top: 50%; left: 50%; transform: translate(-50%,-50%);
+    font-size: 1.2rem; font-weight: 700; color: #fff; z-index: 10;
+    text-shadow: 0 0 10px rgba(0,0,0,0.5); pointer-events: none;
+    opacity: 0; transition: opacity 0.3s;
+}
+.rps-result.show { opacity: 1; }
+
+/* ── 记忆翻牌 ── */
+.memory-grid {
+    display: grid; grid-template-columns: repeat(4, 1fr); gap: 6px;
+    padding: 10px; position: absolute; top: 50%; left: 50%;
+    transform: translate(-50%,-50%); z-index: 8;
+}
+.memory-card {
+    width: 48px; height: 48px; border-radius: 6px;
+    background: rgba(124,108,240,0.3); border: 2px solid rgba(124,108,240,0.5);
+    display: flex; align-items: center; justify-content: center;
+    font-size: 1.2rem; cursor: pointer; transition: all .3s;
+}
+.memory-card.flipped { background: rgba(255,255,255,0.9); border-color: var(--accent); }
+.memory-card.matched { background: rgba(46,204,113,0.3); border-color: #2ecc71; opacity: 0.6; pointer-events: none; }
+
+/* 同步状态指示器 */
+.sync-indicator {
+    position: fixed; bottom: 12px; right: 12px; z-index: 999;
+    font-size: 0.6rem; color: var(--muted); display: flex; align-items: center; gap: 4px;
+}
+.sync-indicator .sync-dot { width: 6px; height: 6px; border-radius: 50%; background: #2ecc71; }
+.sync-indicator .sync-dot.syncing { background: #f39c12; animation: pulse 1s infinite; }
+@keyframes pulse { 0%,100%{opacity:1} 50%{opacity:0.3} }
 
 @media (max-width: 768px) {
     .pet-panels { grid-template-columns: 1fr; }
     .pet-scene { height: 240px; }
     .pet-page { padding: 8px; }
+    .game-entry-panel { grid-template-columns: repeat(4, 1fr); gap: 6px; }
+    .game-entry { padding: 8px 4px; }
+    .game-entry .game-icon { font-size: 1.3rem; }
+    .game-entry .game-name { font-size: 0.6rem; }
+    .game-entry .game-desc { display: none; }
+    .memory-card { width: 38px; height: 38px; font-size: 1rem; }
 }
 </style>
 </head>
@@ -191,11 +258,48 @@
 document.getElementById('global-css').textContent = GLOBAL_CSS;
 document.getElementById('app').innerHTML = renderNav('pet') + `
 <div class="pet-page">
-    <div class="game-toolbar">
-        <button class="btn-act game" onclick="startCatchGame()">🎯 接食物</button>
-        <button class="btn-act game" onclick="startClickFrenzy()">⚡ 疯狂点击</button>
-        <button class="btn-act" onclick="aiCareAll()">🤖 全部投喂</button>
-        <button class="btn-act" onclick="toggleDayNight()">🌙 日/夜</button>
+    <!-- 游戏入口面板 -->
+    <div class="game-entry-panel">
+        <div class="game-entry" onclick="startCatchGame()">
+            <span class="game-icon">🎯</span>
+            <span class="game-name">接食物</span>
+            <span class="game-desc">15秒接住掉落美食</span>
+        </div>
+        <div class="game-entry" onclick="startClickFrenzy()">
+            <span class="game-icon">⚡</span>
+            <span class="game-name">疯狂点击</span>
+            <span class="game-desc">10秒狂撸宠物</span>
+        </div>
+        <div class="game-entry" onclick="startRPS()">
+            <span class="game-icon">✊</span>
+            <span class="game-name">猜拳</span>
+            <span class="game-desc">和宠物石头剪刀布</span>
+        </div>
+        <div class="game-entry" onclick="startMemory()">
+            <span class="game-icon">🃏</span>
+            <span class="game-name">翻牌配对</span>
+            <span class="game-desc">记忆emoji位置</span>
+        </div>
+        <div class="game-entry" onclick="aiCareAll()">
+            <span class="game-icon">🤖</span>
+            <span class="game-name">全部投喂</span>
+            <span class="game-desc">AI统一照顾</span>
+        </div>
+        <div class="game-entry" onclick="toggleDayNight()">
+            <span class="game-icon">🌙</span>
+            <span class="game-name">日/夜</span>
+            <span class="game-desc">切换昼夜场景</span>
+        </div>
+        <div class="game-entry" onclick="showGuide()">
+            <span class="game-icon">📜</span>
+            <span class="game-name">说明书</span>
+            <span class="game-desc">宠物饲养指南</span>
+        </div>
+        <div class="game-entry" onclick="syncNow()">
+            <span class="game-icon">☁️</span>
+            <span class="game-name">同步</span>
+            <span class="game-desc">跨设备同步数据</span>
+        </div>
     </div>
 
     <div class="pet-scene" id="scene">
@@ -206,6 +310,8 @@ document.getElementById('app').innerHTML = renderNav('pet') + `
             <div class="combo" id="game-combo">x2 连击!</div>
         </div>
         <div class="click-timer" id="click-timer"></div>
+        <div class="rps-result" id="rps-result"></div>
+        <div id="memory-area"></div>
         <div class="pet-canvas-wrap" id="cat-wrap" style="left:25%">
             <canvas id="cat-canvas"></canvas>
             <div class="pet-name-tag">苍瞳</div>
@@ -269,6 +375,63 @@ document.getElementById('app').innerHTML = renderNav('pet') + `
         </div>
     </div>
 </div>
+
+<!-- 说明书模态框 -->
+<div class="guide-modal" id="guide-modal">
+    <div class="guide-content">
+        <h2>🐾 苍聿居宠物饲养指南</h2>
+        <div class="pet-voice">"喵~ 我是苍瞳，这是我和玄镜一起写的说明书哦！仔细看，不然我挠你！"</div>
+
+        <div class="guide-section">
+            <h3>🐱 关于我们</h3>
+            <p>我是苍瞳，一只狸花猫，AI负责喂我吃饭洗澡，但你控制我的动作！旁边那个戴墨镜的大狗叫玄镜，你负责喂他，但AI控制他做什么。我们两个性格完全不同哦~</p>
+        </div>
+
+        <div class="guide-section">
+            <h3>🍖 状态系统</h3>
+            <p>我们都有饱腹、心情、精力三个状态，会随时间慢慢降低。精力低的时候我们会打瞌睡，饿了会在头顶显示提示，心情不好还会走到屏幕边缘找你！</p>
+        </div>
+
+        <div class="guide-section">
+            <h3>🎯 接食物</h3>
+            <p>食物从天上掉下来，我们会自动接住！连续接住可以触发连击加分，15秒一局。接住食物我们就不饿了~</p>
+        </div>
+
+        <div class="guide-section">
+            <h3>⚡ 疯狂点击</h3>
+            <p>随机选中我们中的一个，10秒内疯狂点击！点得越多心情提升越多，还会增加好感度~</p>
+        </div>
+
+        <div class="guide-section">
+            <h3>✊ 猜拳</h3>
+            <p>和我们玩石头剪刀布！赢了加心情，输了...我们可能会咬你哦~ 三局两胜制！</p>
+        </div>
+
+        <div class="guide-section">
+            <h3>🃏 翻牌配对</h3>
+            <p>记忆翻牌小游戏！翻开两张相同的牌就配对成功，全部配对完成有奖励！考验你的记忆力~</p>
+        </div>
+
+        <div class="guide-section">
+            <h3>💗 好感度</h3>
+            <p>每次互动都会增加好感度，好感度永远不会降低！达到一定数值我们会解锁新表情...大概吧。数据会自动同步到云端，换设备也不怕！</p>
+        </div>
+
+        <div class="guide-section">
+            <h3>☁️ 数据同步</h3>
+            <p>你的游戏分数、好感度、主题设置都会自动在电脑和手机之间同步！每60秒自动同步一次，切换页面也会同步。也可以手动点"同步"按钮~</p>
+        </div>
+
+        <div class="pet-voice">"汪！我是玄镜，说明书看完了就快来陪我玩！别光看不动手！...墨镜下的眼神你自己猜吧。"</div>
+        <button class="guide-close" onclick="hideGuide()">知道了！</button>
+    </div>
+</div>
+
+<!-- 同步状态指示器 -->
+<div class="sync-indicator" id="sync-indicator">
+    <span class="sync-dot" id="sync-dot"></span>
+    <span id="sync-text">已同步</span>
+</div>
 `;
 
 // ── 星星 ──
@@ -281,7 +444,7 @@ for (let i = 0; i < 40; i++) {
 }
 
 // ═══════════════════════════════════════
-// 好感度系统（持久化到localStorage）
+// 好感度系统
 // ═══════════════════════════════════════
 const AFFECTION_KEY = 'cangyv_pet_affection';
 let affection = JSON.parse(localStorage.getItem(AFFECTION_KEY) || '{"cat":0,"dog":0}');
@@ -338,43 +501,57 @@ function dogFeed() { if (!dog.feed()) showToast('你无法饲养苍瞳~', 'info'
 function dogBathe() { if (!dog.bathe()) showToast('你无法饲养苍瞳~', 'info'); else addAffection('dog', 2); }
 function dogPlay() { if (!dog.play()) showToast('你无法饲养苍瞳~', 'info'); else addAffection('dog', 3); }
 
-// ── 全部投喂（调用后端AI饲养） ──
+// ── 全部投喂 ──
 async function aiCareAll() {
     try {
         const res = await fetch('/api/pet/ai-care', { method: 'POST' });
         if (res.ok) {
-            cat.hunger = Math.min(100, cat.hunger + 20);
-            cat.mood = Math.min(100, cat.mood + 15);
-            dog.hunger = Math.min(100, dog.hunger + 20);
-            dog.mood = Math.min(100, dog.mood + 15);
-            cat.onStatsChange(cat.getStats());
-            dog.onStatsChange(dog.getStats());
+            cat.hunger = Math.min(100, cat.hunger + 20); cat.mood = Math.min(100, cat.mood + 15);
+            dog.hunger = Math.min(100, dog.hunger + 20); dog.mood = Math.min(100, dog.mood + 15);
+            cat.onStatsChange(cat.getStats()); dog.onStatsChange(dog.getStats());
             addLog('cat-log', '🐱 🤖 AI统一投喂完成！');
             addLog('dog-log', '🕶️ 🤖 AI统一投喂完成！');
             addAffection('cat', 1); addAffection('dog', 1);
             showToast('AI已统一投喂！', 'success');
         }
     } catch(e) {
-        // 后端不可用时本地执行
-        cat.hunger = Math.min(100, cat.hunger + 20);
-        cat.mood = Math.min(100, cat.mood + 15);
-        dog.hunger = Math.min(100, dog.hunger + 20);
-        dog.mood = Math.min(100, dog.mood + 15);
-        cat.onStatsChange(cat.getStats());
-        dog.onStatsChange(dog.getStats());
+        cat.hunger = Math.min(100, cat.hunger + 20); cat.mood = Math.min(100, cat.mood + 15);
+        dog.hunger = Math.min(100, dog.hunger + 20); dog.mood = Math.min(100, dog.mood + 15);
+        cat.onStatsChange(cat.getStats()); dog.onStatsChange(dog.getStats());
         showToast('本地投喂完成！', 'success');
     }
 }
 
-// ═══════════════════════════════════════
-// 日/夜切换
-// ═══════════════════════════════════════
+// ── 日/夜切换 ──
 let isNight = false;
 function toggleDayNight() {
     isNight = !isNight;
     document.getElementById('scene').classList.toggle('night', isNight);
     addLog('cat-log', isNight ? '🐱 🌙 夜幕降临...' : '🐱 ☀️ 天亮了！');
     addLog('dog-log', isNight ? '🕶️ 🌙 夜晚模式' : '🕶️ ☀️ 白天模式');
+}
+
+// ── 说明书 ──
+function showGuide() { document.getElementById('guide-modal').classList.add('show'); }
+function hideGuide() { document.getElementById('guide-modal').classList.remove('show'); }
+document.getElementById('guide-modal').addEventListener('click', (e) => {
+    if (e.target === e.currentTarget) hideGuide();
+});
+
+// ── 手动同步 ──
+async function syncNow() {
+    const dot = document.getElementById('sync-dot');
+    const text = document.getElementById('sync-text');
+    dot.classList.add('syncing'); text.textContent = '同步中...';
+    try {
+        await syncManager.sync();
+        text.textContent = '已同步';
+        showToast('数据同步完成！', 'success');
+    } catch(e) {
+        text.textContent = '同步失败';
+    }
+    dot.classList.remove('syncing');
+    setTimeout(() => { text.textContent = '已同步'; }, 3000);
 }
 
 // ═══════════════════════════════════════
@@ -388,45 +565,24 @@ function onPetClick(pet, wrapEl, e) {
     const sceneRect = scene.getBoundingClientRect();
     const cx = rect.left - sceneRect.left + rect.width / 2;
     const cy = rect.top - sceneRect.top + rect.height / 2;
-
-    // 涟漪效果
     spawnRipple(cx, cy);
-
-    // 随机反应
     const reactions = ['happy', 'tilt', 'paw'];
     if (pet.mood < 30) reactions.push('scratch');
     const reaction = reactions[Math.floor(Math.random() * reactions.length)];
     pet.doAction(reaction);
-
-    // 状态加成
     pet.mood = Math.min(100, pet.mood + 2);
     addAffection(pet.type, 1);
-
-    // 浮动+1
     spawnFloatNum(cx, cy, '+1 💗', '#e91e63');
 }
 
 document.getElementById('cat-wrap').addEventListener('click', (e) => onPetClick(cat, e.currentTarget, e));
 document.getElementById('dog-wrap').addEventListener('click', (e) => onPetClick(dog, e.currentTarget, e));
-
-// 双击切换日/夜
-scene.addEventListener('dblclick', (e) => {
-    e.preventDefault();
-    toggleDayNight();
-});
-
-// 触摸支持
-document.getElementById('cat-wrap').addEventListener('touchend', (e) => {
-    e.preventDefault();
-    onPetClick(cat, e.currentTarget, e);
-});
-document.getElementById('dog-wrap').addEventListener('touchend', (e) => {
-    e.preventDefault();
-    onPetClick(dog, e.currentTarget, e);
-});
+scene.addEventListener('dblclick', (e) => { e.preventDefault(); toggleDayNight(); });
+document.getElementById('cat-wrap').addEventListener('touchend', (e) => { e.preventDefault(); onPetClick(cat, e.currentTarget, e); });
+document.getElementById('dog-wrap').addEventListener('touchend', (e) => { e.preventDefault(); onPetClick(dog, e.currentTarget, e); });
 
 // ═══════════════════════════════════════
-// 接食物小游戏
+// 🎯 接食物小游戏
 // ═══════════════════════════════════════
 let catchGameActive = false;
 let catchGameScore = 0;
@@ -443,104 +599,67 @@ function startCatchGame() {
     catchGameScore = 0;
     catchCombo = 0;
     updateGameHUD();
-    addLog('cat-log', '🐱 🎯 接食物游戏开始！点击宠物接住食物！');
+    addLog('cat-log', '🐱 🎯 接食物游戏开始！');
     addLog('dog-log', '🕶️ 🎯 接食物游戏开始！');
-
-    // 15秒游戏时间
     let timeLeft = 15;
-    showToast('接食物！点击宠物接住掉落的食物！', 'success');
-
-    // 每隔一段时间生成食物
-    catchGameTimer = setInterval(() => {
-        timeLeft--;
-        if (timeLeft <= 0) endCatchGame();
-    }, 1000);
-
-    // 生成食物
+    showToast('接食物！15秒内让宠物接住掉落的食物！', 'success');
+    catchGameTimer = setInterval(() => { timeLeft--; if (timeLeft <= 0) endCatchGame(); }, 1000);
     spawnFoodLoop();
 }
 
 function spawnFoodLoop() {
     if (!catchGameActive) return;
     spawnFallingItem();
-    const delay = 800 + Math.random() * 1200;
-    setTimeout(spawnFoodLoop, delay);
+    setTimeout(spawnFoodLoop, 800 + Math.random() * 1200);
 }
 
 function spawnFallingItem() {
     if (!catchGameActive) return;
     const sceneRect = scene.getBoundingClientRect();
     const food = FOOD_ITEMS[Math.floor(Math.random() * FOOD_ITEMS.length)];
-
     const el = document.createElement('div');
     el.className = 'falling-item';
     el.textContent = food;
     el.dataset.food = food;
     el.dataset.value = FOOD_VALUES[food] || 5;
-
-    const startX = 10 + Math.random() * 80; // 10%-90%
-    el.style.left = startX + '%';
+    el.style.left = (10 + Math.random() * 80) + '%';
     el.style.top = '0px';
-
-    const fallDist = sceneRect.height - 80; // 到地面
-    el.style.setProperty('--fall-dist', fallDist + 'px');
+    el.style.setProperty('--fall-dist', (sceneRect.height - 80) + 'px');
     el.style.animationDuration = (2 + Math.random()) + 's';
-
     scene.appendChild(el);
 
-    // 检测是否被宠物接住
     const checkCatch = setInterval(() => {
         if (!catchGameActive || !el.parentNode) { clearInterval(checkCatch); return; }
         const foodRect = el.getBoundingClientRect();
         const catRect = document.getElementById('cat-wrap').getBoundingClientRect();
         const dogRect = document.getElementById('dog-wrap').getBoundingClientRect();
-
-        if (isOverlapping(foodRect, catRect)) {
-            caughtBy('cat', el, food);
-            clearInterval(checkCatch);
-        } else if (isOverlapping(foodRect, dogRect)) {
-            caughtBy('dog', el, food);
-            clearInterval(checkCatch);
-        }
+        if (isOverlapping(foodRect, catRect)) { caughtBy('cat', el); clearInterval(checkCatch); }
+        else if (isOverlapping(foodRect, dogRect)) { caughtBy('dog', el); clearInterval(checkCatch); }
     }, 100);
 
-    // 食物落地后移除
-    el.addEventListener('animationend', () => {
-        if (el.parentNode) {
-            catchCombo = 0;
-            updateGameHUD();
-            el.remove();
-        }
-    });
+    el.addEventListener('animationend', () => { if (el.parentNode) { catchCombo = 0; updateGameHUD(); el.remove(); } });
 }
 
 function isOverlapping(a, b) {
-    const margin = 15;
-    return !(a.right < b.left - margin || a.left > b.right + margin ||
-             a.bottom < b.top - margin || a.top > b.bottom + margin);
+    const m = 15;
+    return !(a.right < b.left - m || a.left > b.right + m || a.bottom < b.top - m || a.top > b.bottom + m);
 }
 
-function caughtBy(petType, el, food) {
+function caughtBy(petType, el) {
     const pet = petType === 'cat' ? cat : dog;
     const val = parseInt(el.dataset.value) || 5;
-
     catchCombo++;
     const bonus = Math.floor(val * (1 + catchCombo * 0.1));
     catchGameScore += bonus;
     totalGameScore += bonus;
     localStorage.setItem('cangyv_game_score', totalGameScore);
-
-    // 状态加成
     pet.hunger = Math.min(100, pet.hunger + val * 0.5);
     pet.mood = Math.min(100, pet.mood + val * 0.3);
     pet.doAction('eat');
     addAffection(petType, 1);
-
-    // 视觉反馈
     const rect = el.getBoundingClientRect();
     const sceneRect = scene.getBoundingClientRect();
     spawnFloatNum(rect.left - sceneRect.left, rect.top - sceneRect.top, `+${bonus} 🎯`, '#f39c12');
-
     updateGameHUD();
     el.remove();
 }
@@ -548,21 +667,20 @@ function caughtBy(petType, el, food) {
 function endCatchGame() {
     catchGameActive = false;
     if (catchGameTimer) clearInterval(catchGameTimer);
-    // 清除残留食物
     scene.querySelectorAll('.falling-item').forEach(el => el.remove());
     updateGameHUD();
-    const msg = `游戏结束！得分 ${catchGameScore}${catchCombo >= 5 ? ' 🔥最高连击x' + catchCombo : ''}`;
+    const msg = `游戏结束！得分 ${catchGameScore}`;
     addLog('cat-log', '🐱 ' + msg);
     addLog('dog-log', '🕶️ ' + msg);
     showToast(msg, 'success');
 }
 
 // ═══════════════════════════════════════
-// 疯狂点击模式
+// ⚡ 疯狂点击模式
 // ═══════════════════════════════════════
 let clickFrenzyActive = false;
 let clickCount = 0;
-let clickFrenzyTarget = null; // 'cat' | 'dog'
+let clickFrenzyTarget = null;
 let clickFrenzyTimer = null;
 
 function startClickFrenzy() {
@@ -571,15 +689,12 @@ function startClickFrenzy() {
     clickCount = 0;
     clickFrenzyTarget = Math.random() < 0.5 ? 'cat' : 'dog';
     const petName = clickFrenzyTarget === 'cat' ? '苍瞳' : '玄镜';
-
     const timerEl = document.getElementById('click-timer');
     timerEl.classList.add('show');
     timerEl.textContent = '10';
-
     showToast(`疯狂点击${petName}！限时10秒！`, 'success');
     addLog(clickFrenzyTarget === 'cat' ? 'cat-log' : 'dog-log',
         `${clickFrenzyTarget === 'cat' ? '🐱' : '🕶️'} ⚡ 疯狂点击开始！`);
-
     let timeLeft = 10;
     clickFrenzyTimer = setInterval(() => {
         timeLeft--;
@@ -587,7 +702,6 @@ function startClickFrenzy() {
         if (timeLeft <= 0) endClickFrenzy();
     }, 1000);
 
-    // 临时覆盖宠物点击
     const wrapId = clickFrenzyTarget === 'cat' ? 'cat-wrap' : 'dog-wrap';
     const wrap = document.getElementById(wrapId);
     wrap._frenzyHandler = (e) => {
@@ -596,11 +710,7 @@ function startClickFrenzy() {
         clickCount++;
         const rect = wrap.getBoundingClientRect();
         const sceneRect = scene.getBoundingClientRect();
-        spawnFloatNum(
-            rect.left - sceneRect.left + Math.random() * 40,
-            rect.top - sceneRect.top + Math.random() * 20,
-            `+1`, '#7c6cf0'
-        );
+        spawnFloatNum(rect.left - sceneRect.left + Math.random() * 40, rect.top - sceneRect.top + Math.random() * 20, `+1`, '#7c6cf0');
     };
     wrap.addEventListener('click', wrap._frenzyHandler);
     wrap.addEventListener('touchend', (e) => { e.preventDefault(); wrap._frenzyHandler(e); });
@@ -609,33 +719,214 @@ function startClickFrenzy() {
 function endClickFrenzy() {
     clickFrenzyActive = false;
     if (clickFrenzyTimer) clearInterval(clickFrenzyTimer);
-
-    const timerEl = document.getElementById('click-timer');
-    timerEl.classList.remove('show');
-
-    // 移除临时handler
+    document.getElementById('click-timer').classList.remove('show');
     const wrapId = clickFrenzyTarget === 'cat' ? 'cat-wrap' : 'dog-wrap';
     const wrap = document.getElementById(wrapId);
-    if (wrap._frenzyHandler) {
-        wrap.removeEventListener('click', wrap._frenzyHandler);
-        wrap._frenzyHandler = null;
-    }
-
-    // 计算奖励
+    if (wrap._frenzyHandler) { wrap.removeEventListener('click', wrap._frenzyHandler); wrap._frenzyHandler = null; }
     const pet = clickFrenzyTarget === 'cat' ? cat : dog;
     const moodBonus = Math.min(30, clickCount * 0.5);
     pet.mood = Math.min(100, pet.mood + moodBonus);
     addAffection(clickFrenzyTarget, Math.floor(clickCount / 5));
     pet.doAction('happy');
-
     totalGameScore += clickCount;
     localStorage.setItem('cangyv_game_score', totalGameScore);
-
     const msg = `⚡ 疯狂点击结束！${clickCount}次 → 心情+${Math.round(moodBonus)}`;
     addLog(clickFrenzyTarget === 'cat' ? 'cat-log' : 'dog-log',
         (clickFrenzyTarget === 'cat' ? '🐱' : '🕶️') + ' ' + msg);
     showToast(msg, 'success');
     updateGameHUD();
+}
+
+// ═══════════════════════════════════════
+// ✊ 猜拳小游戏（三局两胜）
+// ═══════════════════════════════════════
+let rpsActive = false;
+let rpsWins = 0;
+let rpsLosses = 0;
+let rpsRound = 0;
+
+function startRPS() {
+    if (rpsActive) return;
+    rpsActive = true;
+    rpsWins = 0;
+    rpsLosses = 0;
+    rpsRound = 0;
+    addLog('cat-log', '🐱 ✊ 猜拳开始！三局两胜！');
+    addLog('dog-log', '🕶️ ✊ 来比比谁厉害！');
+    showToast('猜拳！三局两胜，选择石头剪刀布！', 'success');
+    nextRPSRound();
+}
+
+function nextRPSRound() {
+    rpsRound++;
+    // 显示选择按钮
+    const resultEl = document.getElementById('rps-result');
+    resultEl.textContent = `第${rpsRound}局 ✊✌️✋？`;
+    resultEl.classList.add('show');
+
+    // 创建选择按钮
+    const choices = document.createElement('div');
+    choices.id = 'rps-choices';
+    choices.style.cssText = 'position:absolute;top:50%;left:50%;transform:translate(-50%,-50%);z-index:11;display:flex;gap:12px;';
+    ['✊ 石头', '✌️ 剪刀', '✋ 布'].forEach((label, i) => {
+        const btn = document.createElement('button');
+        btn.textContent = label;
+        btn.style.cssText = 'padding:10px 16px;border-radius:12px;font-size:1rem;cursor:pointer;border:2px solid rgba(124,108,240,0.5);background:rgba(255,255,255,0.9);color:#333;';
+        btn.onclick = () => playRPS(i);
+        choices.appendChild(btn);
+    });
+    scene.appendChild(choices);
+}
+
+function playRPS(playerChoice) {
+    const choicesEl = document.getElementById('rps-choices');
+    if (choicesEl) choicesEl.remove();
+
+    const petChoice = Math.floor(Math.random() * 3);
+    const names = ['✊ 石头', '✌️ 剪刀', '✋ 布'];
+    const resultEl = document.getElementById('rps-result');
+
+    let result;
+    if (playerChoice === petChoice) {
+        result = 'draw';
+        resultEl.textContent = `你:${names[playerChoice]} 宠物:${names[petChoice]} → 平局！`;
+    } else if ((playerChoice + 1) % 3 === petChoice) {
+        result = 'win';
+        rpsWins++;
+        resultEl.textContent = `你:${names[playerChoice]} 宠物:${names[petChoice]} → 你赢了！`;
+        cat.mood = Math.min(100, cat.mood + 5);
+        dog.mood = Math.min(100, dog.mood + 5);
+        addAffection('cat', 2); addAffection('dog', 2);
+        cat.doAction('happy'); dog.doAction('happy');
+    } else {
+        result = 'lose';
+        rpsLosses++;
+        resultEl.textContent = `你:${names[playerChoice]} 宠物:${names[petChoice]} → 你输了！`;
+        const angryPet = Math.random() < 0.5 ? cat : dog;
+        angryPet.doAction('bite');
+        addLog(angryPet.type === 'cat' ? 'cat-log' : 'dog-log',
+            `${angryPet.type === 'cat' ? '🐱' : '🕶️'} 哼！我赢了！`);
+    }
+
+    totalGameScore += result === 'win' ? 10 : (result === 'lose' ? 2 : 5);
+    localStorage.setItem('cangyv_game_score', totalGameScore);
+    updateGameHUD();
+
+    setTimeout(() => {
+        resultEl.classList.remove('show');
+        if (rpsWins >= 2 || rpsLosses >= 2) {
+            endRPS();
+        } else {
+            nextRPSRound();
+        }
+    }, 1500);
+}
+
+function endRPS() {
+    rpsActive = false;
+    const won = rpsWins >= 2;
+    const msg = won ? `✊ 猜拳胜利！${rpsWins}:${rpsLosses}` : `✊ 猜拳失败！${rpsWins}:${rpsLosses}`;
+    addLog('cat-log', '🐱 ' + msg);
+    addLog('dog-log', '🕶️ ' + msg);
+    showToast(msg, won ? 'success' : 'info');
+    if (won) {
+        cat.mood = Math.min(100, cat.mood + 10);
+        dog.mood = Math.min(100, dog.mood + 10);
+    }
+}
+
+// ═══════════════════════════════════════
+// 🃏 翻牌配对小游戏
+// ═══════════════════════════════════════
+let memoryActive = false;
+let memoryCards = [];
+let memoryFlipped = [];
+let memoryMatched = 0;
+let memoryMoves = 0;
+
+const MEMORY_EMOJIS = ['🐱', '🐶', '🐟', '🍖', '🎾', '🌙', '💗', '⭐'];
+
+function startMemory() {
+    if (memoryActive) return;
+    memoryActive = true;
+    memoryMatched = 0;
+    memoryMoves = 0;
+    memoryFlipped = [];
+
+    // 创建8对卡片
+    const emojis = [...MEMORY_EMOJIS, ...MEMORY_EMOJIS];
+    // 洗牌
+    for (let i = emojis.length - 1; i > 0; i--) {
+        const j = Math.floor(Math.random() * (i + 1));
+        [emojis[i], emojis[j]] = [emojis[j], emojis[i]];
+    }
+
+    const area = document.getElementById('memory-area');
+    area.innerHTML = '';
+    const grid = document.createElement('div');
+    grid.className = 'memory-grid';
+
+    emojis.forEach((emoji, idx) => {
+        const card = document.createElement('div');
+        card.className = 'memory-card';
+        card.dataset.idx = idx;
+        card.dataset.emoji = emoji;
+        card.textContent = '?';
+        card.onclick = () => flipCard(card);
+        grid.appendChild(card);
+    });
+
+    area.appendChild(grid);
+    addLog('cat-log', '🐱 🃏 翻牌配对开始！找到所有配对！');
+    addLog('dog-log', '🕶️ 🃏 考验记忆力的时候到了！');
+    showToast('翻牌配对！找到所有相同的牌！', 'success');
+}
+
+function flipCard(card) {
+    if (!memoryActive || card.classList.contains('flipped') || card.classList.contains('matched') || memoryFlipped.length >= 2) return;
+
+    card.classList.add('flipped');
+    card.textContent = card.dataset.emoji;
+    memoryFlipped.push(card);
+
+    if (memoryFlipped.length === 2) {
+        memoryMoves++;
+        const [a, b] = memoryFlipped;
+        if (a.dataset.emoji === b.dataset.emoji) {
+            a.classList.add('matched');
+            b.classList.add('matched');
+            memoryMatched++;
+            memoryFlipped = [];
+            if (memoryMatched === MEMORY_EMOJIS.length) {
+                endMemory();
+            }
+        } else {
+            setTimeout(() => {
+                a.classList.remove('flipped');
+                a.textContent = '?';
+                b.classList.remove('flipped');
+                b.textContent = '?';
+                memoryFlipped = [];
+            }, 600);
+        }
+    }
+}
+
+function endMemory() {
+    memoryActive = false;
+    const bonus = Math.max(5, 30 - memoryMoves);
+    totalGameScore += bonus;
+    localStorage.setItem('cangyv_game_score', totalGameScore);
+    cat.mood = Math.min(100, cat.mood + 10);
+    dog.mood = Math.min(100, dog.mood + 10);
+    addAffection('cat', 3); addAffection('dog', 3);
+    cat.doAction('happy'); dog.doAction('happy');
+    updateGameHUD();
+    const msg = `🃏 翻牌完成！${memoryMoves}步 → +${bonus}分`;
+    addLog('cat-log', '🐱 ' + msg);
+    addLog('dog-log', '🕶️ ' + msg);
+    showToast(msg, 'success');
+    setTimeout(() => { document.getElementById('memory-area').innerHTML = ''; }, 2000);
 }
 
 // ═══════════════════════════════════════
@@ -678,15 +969,10 @@ updateGameHUD();
 // 低状态提示 + 打瞌睡 + 边缘行为
 // ═══════════════════════════════════════
 setInterval(() => {
-    // 饥饿提示
     updateHungryAlert('cat-wrap', cat);
     updateHungryAlert('dog-wrap', dog);
-
-    // 打瞌睡（精力<30自动睡眠）
     if (cat.energy < 30 && cat.state === 'idle') cat.doAction('sleep');
     if (dog.energy < 30 && dog.state === 'idle') dog.doAction('sleep');
-
-    // 低状态时宠物走向边缘"找你"
     if (cat.hunger < 20 || cat.mood < 20) {
         const cw = document.getElementById('cat-wrap');
         if (cw) cw.style.left = (Math.random() < 0.5 ? 2 : 88) + '%';
@@ -702,15 +988,9 @@ function updateHungryAlert(wrapId, pet) {
     if (!wrap) return;
     let alert = wrap.querySelector('.hungry-alert');
     if (pet.hunger < 30) {
-        if (!alert) {
-            alert = document.createElement('div');
-            alert.className = 'hungry-alert';
-            wrap.appendChild(alert);
-        }
+        if (!alert) { alert = document.createElement('div'); alert.className = 'hungry-alert'; wrap.appendChild(alert); }
         alert.textContent = pet.hunger < 15 ? '🆘 好饿！' : '😵 饿了...';
-    } else if (alert) {
-        alert.remove();
-    }
+    } else if (alert) { alert.remove(); }
 }
 
 // ═══════════════════════════════════════
@@ -754,14 +1034,12 @@ async function syncBackend() {
             for (const p of data.pets) {
                 const pet = p.name === '苍瞳' ? cat : (p.name === '玄镜' ? dog : null);
                 if (pet && p.hunger !== undefined) {
-                    pet.hunger = p.hunger;
-                    pet.mood = p.mood;
-                    pet.energy = p.energy;
+                    pet.hunger = p.hunger; pet.mood = p.mood; pet.energy = p.energy;
                     pet.onStatsChange(pet.getStats());
                 }
             }
         }
-    } catch(e) { /* 静默失败 */ }
+    } catch(e) {}
 }
 syncBackend();
 setInterval(syncBackend, 30000);

@@ -218,5 +218,115 @@ textarea{resize:vertical;min-height:80px}
 }
 `;
 
+// ── 跨设备历史同步系统 ──
+class SyncManager {
+    constructor() {
+        this._keys = []; // 需要同步的localStorage key列表
+        this._syncing = false;
+        this._lastSync = 0;
+    }
+
+    // 注册需要同步的key
+    register(key) {
+        if (!this._keys.includes(key)) this._keys.push(key);
+    }
+
+    // 读取本地数据
+    _getLocal() {
+        const data = {};
+        for (const key of this._keys) {
+            const raw = localStorage.getItem(key);
+            if (raw !== null) {
+                try {
+                    const parsed = JSON.parse(raw);
+                    data[key] = { value: parsed, ts: Date.now() };
+                } catch { data[key] = { value: raw, ts: Date.now() }; }
+            }
+        }
+        return data;
+    }
+
+    // 写入本地数据
+    _setLocal(cloudData) {
+        for (const [key, entry] of Object.entries(cloudData)) {
+            if (!this._keys.includes(key)) continue;
+            const localRaw = localStorage.getItem(key);
+            let localTs = 0;
+            if (localRaw) {
+                try { const p = JSON.parse(localRaw); if (p && p._ts) localTs = p._ts; } catch {}
+            }
+            // 云端更新则覆盖本地
+            if (entry.ts > localTs) {
+                const val = typeof entry.value === 'object' ? { ...entry.value, _ts: entry.ts } : entry.value;
+                localStorage.setItem(key, JSON.stringify(val));
+            }
+        }
+    }
+
+    // 推送本地到云端
+    async push() {
+        const local = this._getLocal();
+        if (Object.keys(local).length === 0) return;
+        try {
+            const resp = await fetch('/api/sync', {
+                method: 'POST',
+                headers: { 'Content-Type': 'application/json' },
+                body: JSON.stringify({ data: local })
+            });
+            if (resp.ok) {
+                const result = await resp.json();
+                if (result.data) this._setLocal(result.data);
+            }
+        } catch (e) { /* 静默失败 */ }
+    }
+
+    // 从云端拉取
+    async pull() {
+        try {
+            const resp = await fetch('/api/sync');
+            if (resp.ok) {
+                const result = await resp.json();
+                if (result.data) this._setLocal(result.data);
+            }
+        } catch (e) { /* 静默失败 */ }
+    }
+
+    // 双向同步
+    async sync() {
+        if (this._syncing) return;
+        this._syncing = true;
+        try {
+            await this.pull();
+            await this.push();
+            this._lastSync = Date.now();
+        } finally {
+            this._syncing = false;
+        }
+    }
+
+    // 自动同步（每60秒）
+    startAutoSync(interval = 60000) {
+        this.sync(); // 立即同步一次
+        setInterval(() => this.sync(), interval);
+        // 页面可见性变化时同步
+        document.addEventListener('visibilitychange', () => {
+            if (!document.hidden) this.sync();
+        });
+    }
+}
+
+// 全局同步实例
+const syncManager = new SyncManager();
+// 注册所有需要同步的key
+syncManager.register('cangyv-theme');
+syncManager.register('cangyv_pet_affection');
+syncManager.register('cangyv_game_score');
+syncManager.register('cangyv_pet_state');
+syncManager.register('cangyv_diary_data');
+syncManager.register('cangyv_chat_history');
+
 // ── 初始化 ──
-document.addEventListener('DOMContentLoaded', initTheme);
+document.addEventListener('DOMContentLoaded', () => {
+    initTheme();
+    syncManager.startAutoSync();
+});

@@ -179,6 +179,52 @@ def messages_proxy():
     except http_requests.RequestException as e:
         return jsonify({"error": str(e)}), 502
 
+# ── 用户数据同步 API ──
+_SYNC_DATA_FILE = os.path.join(os.path.dirname(__file__), "sync_data.json")
+
+def _load_sync_data():
+    if not os.path.exists(_SYNC_DATA_FILE):
+        return {}
+    try:
+        with open(_SYNC_DATA_FILE) as f:
+            return _pet_json.load(f)
+    except Exception:
+        return {}
+
+def _save_sync_data(data):
+    with open(_SYNC_DATA_FILE, "w") as f:
+        _pet_json.dump(data, f, indent=2, ensure_ascii=False)
+
+@app.route("/api/sync", methods=["GET"])
+def get_sync():
+    """获取所有同步数据"""
+    data = _load_sync_data()
+    return jsonify({"status": "ok", "data": data})
+
+@app.route("/api/sync", methods=["POST"])
+def post_sync():
+    """推送本地数据到云端，合并策略：按key的timestamp取最新"""
+    incoming = request.get_json(silent=True) or {}
+    if "data" not in incoming:
+        return jsonify({"error": "缺少data字段"}), 400
+    cloud = _load_sync_data()
+    for key, entry in incoming["data"].items():
+        if not isinstance(entry, dict) or "ts" not in entry:
+            continue
+        if key not in cloud or entry["ts"] > cloud[key].get("ts", 0):
+            cloud[key] = entry
+    _save_sync_data(cloud)
+    return jsonify({"status": "ok", "data": cloud})
+
+@app.route("/api/sync/<key>", methods=["DELETE"])
+def delete_sync_key(key):
+    """删除某个同步key"""
+    data = _load_sync_data()
+    if key in data:
+        del data[key]
+        _save_sync_data(data)
+    return jsonify({"status": "ok"})
+
 # ── 健康检查 ──
 @app.route("/health")
 def health():
