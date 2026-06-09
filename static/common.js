@@ -1,6 +1,3 @@
-
-/* ── 移动端导航栏 ── */
-@media (max-width: 768px) { .nav-label { display: none; } .nav-link { padding: 6px 10px; } }
 /**
  * Cangyv 前端共享工具库
  * API调用、主题切换、导航、时间格式化等
