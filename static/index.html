@@ -314,6 +314,14 @@ document.addEventListener('DOMContentLoaded', () => {
     setupSearchDebounce();
 });
 
+function safeParseTags(tags) {
+    if (Array.isArray(tags)) return tags;
+    if (typeof tags === 'string') {
+        try { return JSON.parse(tags); } catch(e) {}
+        return tags.split(/[,，]/).map(t => t.trim()).filter(Boolean);
+    }
+    return [];
+}
 function renderNavAndTabs() {
     // 导航栏
     document.getElementById('nav-container').innerHTML = renderNav('index');
@@ -398,7 +406,7 @@ function renderMemoryCard(m, index) {
     const stars = '★'.repeat(m.importance || 0) + '☆'.repeat(5 - (m.importance || 0));
     const preview = m.content || m.summary || '';
     const isUnread = m.read_by_user === false;
-    const tags = (m.tags || []).map(t => `<span class="tag">${escapeHtml(t)}</span>`).join('');
+    const tags = safeParseTags(m.tags).map(t => `<span class="tag">${escapeHtml(t)}</span>`).join('');
     const timeStr = formatTime(m.created_at);
     const favClass = m.favorite ? 'active' : '';
     const favIcon = m.favorite ? '❤️' : '🤍';
@@ -580,7 +588,7 @@ async function openDetail(id) {
 
 function renderDetailContent(m) {
     const stars = '★'.repeat(m.importance || 0) + '☆'.repeat(5 - (m.importance || 0));
-    const tags = (m.tags || []).map(t => `<span class="tag">${escapeHtml(t)}</span>`).join(' ');
+    const tags = safeParseTags(m.tags).map(t => `<span class="tag">${escapeHtml(t)}</span>`).join(' ');
 
     document.getElementById('detailContent').textContent = m.content || '';
 
@@ -710,7 +718,7 @@ async function openEditFromDetail(id) {
         document.getElementById('editCategory').value = m.category || '';
         document.getElementById('editImportance').value = m.importance || 3;
         document.getElementById('importanceDisplay').textContent = m.importance || 3;
-        document.getElementById('editTags').value = (m.tags || []).join(', ');
+        document.getElementById('editTags').value = safeParseTags(m.tags).join(', ');
         state.selectedMemType = m.mem_type || 'anchor';
         updateMemTypeButtons();
         document.getElementById('editSubmitBtn').textContent = '更新';
