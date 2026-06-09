@@ -392,6 +392,104 @@
   .chat-input-area { padding: 10px 12px 14px; }
   .chat-messages { padding: 16px 12px; }
 }
+
+/* 模型选择器 */
+.model-selector {
+    padding: 6px 10px;
+    font-size: .82rem;
+    border-radius: var(--radius);
+    background: var(--inputBg);
+    border: 1px solid var(--border);
+    color: var(--text);
+    max-width: 180px;
+    white-space: nowrap;
+    overflow: hidden;
+    text-overflow: ellipsis;
+}
+.model-selector:focus { border-color: var(--accent); }
+
+.sidebar-search {
+    padding: 8px 12px;
+    border-bottom: 1px solid var(--border);
+}
+.sidebar-search input {
+    width: 100%;
+    padding: 8px 12px;
+    font-size: .82rem;
+    border-radius: var(--radius);
+}
+
+/* 消息操作 */
+.message-actions {
+    display: flex;
+    gap: 2px;
+    margin-top: 4px;
+    opacity: 0;
+    transition: opacity .15s;
+}
+.message-row:hover .message-actions {
+    opacity: 1;
+}
+.msg-action-btn {
+    width: 26px;
+    height: 26px;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    border-radius: 6px;
+    font-size: .72rem;
+    color: var(--muted);
+    transition: all .15s;
+}
+.msg-action-btn:hover {
+    background: var(--accentLight);
+    color: var(--accent);
+}
+
+/* 引用块 */
+.quote-block {
+    border-left: 3px solid var(--accent);
+    padding: 4px 10px;
+    margin-bottom: 6px;
+    font-size: .82rem;
+    color: var(--muted);
+    background: var(--accentLight);
+    border-radius: 0 6px 6px 0;
+    max-height: 60px;
+    overflow: hidden;
+}
+
+/* 右键菜单 */
+.context-menu {
+    position: fixed;
+    background: var(--cardSolid);
+    border: 1px solid var(--border);
+    border-radius: var(--radius);
+    padding: 4px;
+    z-index: 3000;
+    box-shadow: 0 8px 24px var(--shadow);
+    min-width: 140px;
+}
+.context-menu-item {
+    display: flex;
+    align-items: center;
+    gap: 8px;
+    padding: 8px 12px;
+    font-size: .82rem;
+    color: var(--text);
+    border-radius: 8px;
+    cursor: pointer;
+    transition: background .15s;
+}
+.context-menu-item:hover {
+    background: var(--accentLight);
+}
+.context-menu-item.danger {
+    color: #e74c3c;
+}
+.context-menu-item.danger:hover {
+    background: rgba(231,76,60,.1);
+}
 </style>
 </head>
 <body>
@@ -407,6 +505,9 @@
     <div class="sidebar-header">
       <h2>💬 会话</h2>
       <button class="btn btn-ghost btn-sm" onclick="createNewSession()" title="新建会话">＋ 新建</button>
+    </div>
+    <div class="sidebar-search">
+      <input type="text" id="sessionSearch" placeholder="搜索会话..." oninput="filterSessions()">
     </div>
     <div class="sidebar-list" id="sessionList">
       <div class="sidebar-empty">
@@ -426,6 +527,10 @@
         <div class="chat-title" id="chatTitle">选择或创建一个会话</div>
         <div class="chat-subtitle" id="chatSubtitle"></div>
       </div>
+      <select class="model-selector" id="modelSelector" onchange="onModelChange()">
+        <option value="">默认模型</option>
+      </select>
+      <button class="btn btn-ghost btn-sm" onclick="exportChat()" title="导出对话" style="flex-shrink:0">📥</button>
     </div>
 
     <!-- 消息区域 -->
@@ -440,7 +545,7 @@
     <!-- 输入区域 -->
     <div class="chat-input-area" id="chatInputArea">
       <div class="chat-input-wrap">
-        <textarea id="messageInput" placeholder="输入消息… (Shift+Enter 换行)" rows="1" onkeydown="handleInputKeydown(event)"></textarea>
+        <textarea id="messageInput" placeholder="输入消息… (Enter 发送, Shift+Enter 换行)" rows="1" onkeydown="handleInputKeydown(event)"></textarea>
         <button class="send-btn" id="sendBtn" onclick="sendMessage()" title="发送">➤</button>
       </div>
     </div>
@@ -488,12 +593,16 @@ let currentMessages = [];
 let isLoading = false;
 let renameSessionId = null;
 let deleteSessionId = null;
+let selectedModel = '';
+let availableModels = [];
+let streamEnabled = true;
 
 // ── 初始化 ──
 document.addEventListener('DOMContentLoaded', () => {
   initTheme();
   $('#nav-container').innerHTML = renderNav('chat');
   loadSessions();
+  loadModels();
   autoResizeTextarea();
 });
 
@@ -671,21 +780,28 @@ function renderMessages() {
     return;
   }
 
-  container.innerHTML = currentMessages.map(msg => renderMessageRow(msg)).join('');
+  container.innerHTML = currentMessages.map((msg, i) => renderMessageRow(msg, i)).join('');
   scrollToBottom();
 }
 
-function renderMessageRow(msg) {
+function renderMessageRow(msg, index) {
   const isUser = msg.role === 'user';
   const avatar = isUser ? '👤' : '🤖';
   const time = formatTime(msg.created_at);
   const content = isUser ? escapeHtml(msg.content) : renderMarkdown(msg.content);
+  const idx = index !== undefined ? index : currentMessages.indexOf(msg);
 
-  return `<div class="message-row ${msg.role}">
+  return `<div class="message-row ${msg.role}" data-idx="${idx}" oncontextmenu="showContextMenu(event, ${idx})">
     <div class="message-avatar">${avatar}</div>
     <div>
       <div class="message-bubble"><div class="md-content">${content}</div></div>
-      <div class="message-time">${time}</div>
+      <div style="display:flex;align-items:center;gap:8px">
+        <div class="message-time">${time}</div>
+        <div class="message-actions">
+          <button class="msg-action-btn" onclick="event.stopPropagation();copyMessage(${idx})" title="复制">📋</button>
+          <button class="msg-action-btn" onclick="event.stopPropagation();quoteMessage(${idx})" title="引用">💬</button>
+        </div>
+      </div>
     </div>
   </div>`;
 }
@@ -743,73 +859,200 @@ function renderMarkdown(text) {
 
 // ── 发送消息 ──
 async function sendMessage() {
-  const input = $('#messageInput');
-  const text = input.value.trim();
-  if (!text || isLoading) return;
+    const input = $('#messageInput');
+    const text = input.value.trim();
+    if (!text || isLoading) return;
 
-  // 如果没有当前会话，先创建
-  if (!currentSession) {
-    try {
-      const key = 'session_' + Date.now();
-      const title = text.length > 20 ? text.substring(0, 20) + '…' : text;
-      const session = await apiPost('/api/v1/sessions', { session_key: key, title });
-      sessions.push(session);
-      currentSession = session;
-      currentMessages = [];
-      renderSessionList();
-      renderChatHeader();
-    } catch (e) {
-      console.error('创建会话失败:', e);
-      showToast('创建会话失败', 'error');
-      return;
+    // 如果没有当前会话，先创建
+    if (!currentSession) {
+        try {
+            const key = 'session_' + Date.now();
+            const title = text.length > 20 ? text.substring(0, 20) + '…' : text;
+            const session = await apiPost('/api/v1/sessions', { session_key: key, title });
+            sessions.push(session);
+            currentSession = session;
+            currentMessages = [];
+            renderSessionList();
+            renderChatHeader();
+        } catch (e) {
+            console.error('创建会话失败:', e);
+            showToast('创建会话失败', 'error');
+            return;
+        }
     }
-  }
 
-  // 显示用户消息
-  const userMsg = { role: 'user', content: text, created_at: new Date().toISOString() };
-  currentMessages.push(userMsg);
-  appendMessage(userMsg);
-  input.value = '';
-  autoResizeTextarea();
-  renderChatHeader();
-
-  // 显示打字指示器
-  isLoading = true;
-  updateSendButton();
-  showTypingIndicator();
-
-  try {
-    const resp = await apiPost('/api/v1/chat', {
-      session_key: currentSession.session_key,
-      message: text
-    });
-
-    removeTypingIndicator();
-
-    const assistantMsg = {
-      role: 'assistant',
-      content: resp.reply || resp.message || '(空回复)',
-      created_at: new Date().toISOString()
-    };
-    currentMessages.push(assistantMsg);
-    appendMessage(assistantMsg);
+    // 显示用户消息
+    const userMsg = { role: 'user', content: text, created_at: new Date().toISOString() };
+    currentMessages.push(userMsg);
+    appendMessage(userMsg);
+    input.value = '';
+    autoResizeTextarea();
     renderChatHeader();
 
-    // 更新会话列表中的时间
-    if (currentSession) {
-      currentSession.updated_at = new Date().toISOString();
-      const idx = sessions.findIndex(s => s.id === currentSession.id);
-      if (idx !== -1) sessions[idx].updated_at = currentSession.updated_at;
-      renderSessionList();
+    isLoading = true;
+    updateSendButton();
+
+    // 准备请求体
+    const reqBody = {
+        session_key: currentSession.session_key,
+        message: text,
+        stream: streamEnabled,
+    };
+    if (selectedModel) reqBody.model = selectedModel;
+
+    if (streamEnabled) {
+        // SSE 流式输出
+        await sendStreamMessage(reqBody);
+    } else {
+        // 非流式输出
+        await sendNormalMessage(reqBody);
     }
-  } catch (e) {
-    removeTypingIndicator();
-    showError(e.message || '发送失败，请重试');
-    console.error('发送消息失败:', e);
-  } finally {
+
     isLoading = false;
     updateSendButton();
-  }
+}
+
+async function sendNormalMessage(reqBody) {
+    showTypingIndicator();
+    try {
+        const resp = await apiPost('/api/v1/chat', reqBody);
+        removeTypingIndicator();
+        const assistantMsg = {
+            role: 'assistant',
+            content: resp.reply || resp.message || '(空回复)',
+            created_at: new Date().toISOString()
+        };
+        currentMessages.push(assistantMsg);
+        appendMessage(assistantMsg);
+        renderChatHeader();
+        updateSessionTime();
+    } catch (e) {
+        removeTypingIndicator();
+        showError(e.message || '发送失败，请重试');
+    }
+}
+
+async function sendStreamMessage(reqBody) {
+    // 先创建一个空的 assistant 消息占位
+    const assistantMsg = {
+        role: 'assistant',
+        content: '',
+        created_at: new Date().toISOString()
+    };
+    currentMessages.push(assistantMsg);
+
+    // 渲染占位消息（带打字指示器）
+    const container = $('#chatMessages');
+    const empty = container.querySelector('.chat-empty');
+    if (empty) empty.remove();
+
+    const msgEl = document.createElement('div');
+    msgEl.className = 'message-row assistant';
+    msgEl.id = 'streamingMsg';
+    msgEl.innerHTML = `
+        <div class="message-avatar">🤖</div>
+        <div>
+            <div class="message-bubble"><div class="md-content"><div class="typing-indicator"><div class="dot"></div><div class="dot"></div><div class="dot"></div></div></div></div>
+            <div class="message-time">${formatTime(assistantMsg.created_at)}</div>
+        </div>`;
+    container.appendChild(msgEl);
+    scrollToBottom();
+
+    try {
+        const resp = await fetch('/v1/chat/completions', {
+            method: 'POST',
+            headers: { 'Content-Type': 'application/json' },
+            body: JSON.stringify({
+                model: reqBody.model || 'default',
+                messages: currentMessages.slice(0, -1).map(m => ({ role: m.role, content: m.content })),
+                stream: true,
+            }),
+        });
+
+        if (!resp.ok) {
+            throw new Error(`HTTP ${resp.status}`);
+        }
+
+        const reader = resp.body.getReader();
+        const decoder = new TextDecoder();
+        let fullContent = '';
+        let buffer = '';
+
+        while (true) {
+            const { done, value } = await reader.read();
+            if (done) break;
+
+            buffer += decoder.decode(value, { stream: true });
+            const lines = buffer.split('\n');
+            buffer = lines.pop() || '';
+
+            for (const line of lines) {
+                if (!line.startsWith('data: ')) continue;
+                const data = line.slice(6).trim();
+                if (data === '[DONE]') continue;
+
+                try {
+                    const json = JSON.parse(data);
+                    const delta = json.choices?.[0]?.delta?.content || '';
+                    if (delta) {
+                        fullContent += delta;
+                        assistantMsg.content = fullContent;
+                        // 更新消息气泡内容
+                        const contentEl = msgEl.querySelector('.md-content');
+                        if (contentEl) {
+                            contentEl.innerHTML = renderMarkdown(fullContent);
+                        }
+                        scrollToBottom();
+                    }
+                } catch (e) {
+                    // 非 JSON 数据，可能是纯文本
+                    if (data && data !== '[DONE]') {
+                        fullContent += data;
+                        assistantMsg.content = fullContent;
+                        const contentEl = msgEl.querySelector('.md-content');
+                        if (contentEl) {
+                            contentEl.innerHTML = renderMarkdown(fullContent);
+                        }
+                        scrollToBottom();
+                    }
+                }
+            }
+        }
+
+        // 流式结束，如果没有收到内容则尝试非流式
+        if (!fullContent) {
+            msgEl.remove();
+            currentMessages.pop();
+            await sendNormalMessage({ ...reqBody, stream: false });
+            return;
+        }
+
+        // 最终渲染
+        const contentEl = msgEl.querySelector('.md-content');
+        if (contentEl) {
+            contentEl.innerHTML = renderMarkdown(fullContent);
+        }
+        renderChatHeader();
+        updateSessionTime();
+    } catch (e) {
+        msgEl.remove();
+        currentMessages.pop();
+        // 流式失败，回退到非流式
+        try {
+            await sendNormalMessage({ ...reqBody, stream: false });
+        } catch (e2) {
+            showError(e2.message || '发送失败，请重试');
+        }
+    }
+}
+
+function updateSessionTime() {
+    if (currentSession) {
+        currentSession.updated_at = new Date().toISOString();
+        const idx = sessions.findIndex(s => s.id === currentSession.id);
+        if (idx !== -1) sessions[idx].updated_at = currentSession.updated_at;
+        renderSessionList();
+    }
 }
 
 function appendMessage(msg) {
@@ -818,7 +1061,7 @@ function appendMessage(msg) {
   const empty = container.querySelector('.chat-empty');
   if (empty) empty.remove();
 
-  container.insertAdjacentHTML('beforeend', renderMessageRow(msg));
+  container.insertAdjacentHTML('beforeend', renderMessageRow(msg, currentMessages.length - 1));
   scrollToBottom();
 }
 
@@ -876,7 +1119,10 @@ function scrollToBottom() {
 
 // ── 输入处理 ──
 function handleInputKeydown(e) {
-  if (e.key === 'Enter' && !e.shiftKey) {
+  if (e.key === 'Enter' && (e.ctrlKey || e.metaKey)) {
+    e.preventDefault();
+    sendMessage();
+  } else if (e.key === 'Enter' && !e.shiftKey) {
     e.preventDefault();
     sendMessage();
   }
@@ -890,11 +1136,127 @@ function autoResizeTextarea() {
   });
 }
 
+// ── 模型选择器 ──
+async function loadModels() {
+    try {
+        const data = await apiGet('/api/v1/models');
+        availableModels = data.data || (Array.isArray(data) ? data : []);
+        renderModelSelector();
+    } catch (e) {
+        availableModels = [];
+    }
+}
+
+function renderModelSelector() {
+    const sel = $('#modelSelector');
+    const saved = localStorage.getItem('cangyv-chat-model') || '';
+    sel.innerHTML = '<option value="">默认模型</option>' +
+        availableModels.map(m => {
+            const id = m.id || m.name || '';
+            return `<option value="${escapeHtml(id)}" ${id === saved ? 'selected' : ''}>${escapeHtml(id)}</option>`;
+        }).join('');
+    selectedModel = saved;
+}
+
+function onModelChange() {
+    selectedModel = $('#modelSelector').value;
+    localStorage.setItem('cangyv-chat-model', selectedModel);
+}
+
+// ── 会话搜索 ──
+function filterSessions() {
+    const query = ($('#sessionSearch').value || '').trim().toLowerCase();
+    const items = $$('.session-item');
+    items.forEach(item => {
+        const title = item.querySelector('.session-title').textContent.toLowerCase();
+        item.style.display = title.includes(query) ? '' : 'none';
+    });
+}
+
+// ── 消息操作 ──
+function copyMessage(idx) {
+    const msg = currentMessages[idx];
+    if (!msg) return;
+    navigator.clipboard.writeText(msg.content).then(() => {
+        showToast('已复制到剪贴板', 'success');
+    }).catch(() => {
+        showToast('复制失败', 'error');
+    });
+}
+
+function quoteMessage(idx) {
+    const msg = currentMessages[idx];
+    if (!msg) return;
+    const input = $('#messageInput');
+    const quote = msg.content.split('\n')[0].substring(0, 50);
+    input.value = `> ${quote}${msg.content.length > 50 ? '...' : ''}\n\n` + input.value;
+    input.focus();
+    autoResizeTextarea();
+}
+
+function showContextMenu(e, idx) {
+    e.preventDefault();
+    hideContextMenu();
+    const menu = document.createElement('div');
+    menu.className = 'context-menu';
+    menu.id = 'contextMenu';
+    menu.innerHTML = `
+        <div class="context-menu-item" onclick="copyMessage(${idx});hideContextMenu()">📋 复制</div>
+        <div class="context-menu-item" onclick="quoteMessage(${idx});hideContextMenu()">💬 引用</div>
+        <div class="context-menu-item danger" onclick="deleteMessage(${idx});hideContextMenu()">🗑️ 删除</div>
+    `;
+    document.body.appendChild(menu);
+    // 定位
+    const x = Math.min(e.clientX, window.innerWidth - 160);
+    const y = Math.min(e.clientY, window.innerHeight - 120);
+    menu.style.left = x + 'px';
+    menu.style.top = y + 'px';
+}
+
+function hideContextMenu() {
+    const menu = document.getElementById('contextMenu');
+    if (menu) menu.remove();
+}
+
+async function deleteMessage(idx) {
+    const msg = currentMessages[idx];
+    if (!msg) return;
+    if (!confirm('确定要删除这条消息吗？')) return;
+    currentMessages.splice(idx, 1);
+    renderMessages();
+    showToast('消息已删除', 'success');
+}
+
+// ── 导出对话 ──
+function exportChat() {
+    if (!currentSession || !currentMessages.length) {
+        showToast('没有可导出的对话', 'error');
+        return;
+    }
+    const title = currentSession.title || currentSession.session_key || '未命名会话';
+    let md = `# ${title}\n\n`;
+    md += `> 导出时间：${new Date().toLocaleString('zh-CN')}\n\n---\n\n`;
+    currentMessages.forEach(msg => {
+        const role = msg.role === 'user' ? '👤 用户' : '🤖 AI';
+        const time = msg.created_at ? new Date(msg.created_at).toLocaleString('zh-CN') : '';
+        md += `### ${role}${time ? ' · ' + time : ''}\n\n${msg.content}\n\n---\n\n`;
+    });
+    const blob = new Blob([md], { type: 'text/markdown;charset=utf-8' });
+    const url = URL.createObjectURL(blob);
+    const a = document.createElement('a');
+    a.href = url;
+    a.download = `${title.replace(/[/\\?%*:|"<>]/g, '_')}.md`;
+    a.click();
+    URL.revokeObjectURL(url);
+    showToast('对话已导出', 'success');
+}
+
 // ── 点击模态框外部关闭 ──
 document.addEventListener('click', (e) => {
   if (e.target.classList.contains('modal-overlay')) {
     e.target.classList.remove('active');
   }
+  hideContextMenu();
 });
 
 // ── ESC 关闭模态框 ──

@@ -55,6 +55,10 @@ def persona_page():
 def settings_page():
     return send_from_directory("static", "settings.html")
 
+@app.route("/apiconfig")
+def apiconfig_page():
+    return send_from_directory("static", "apiconfig.html")
+
 # ── Public 资源 ──
 @app.route("/public/<path:filename>")
 def public_files(filename):
