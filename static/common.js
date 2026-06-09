@@ -113,7 +113,7 @@ function showToast(msg, type = 'info') {
 
 // ── 导航栏 ──
 function renderNav(activePage) {
-    const pages = [
+    const mainPages = [
         { path: '/', label: '记忆', icon: '🧠', id: 'index' },
         { path: '/chat', label: '聊天', icon: '💬', id: 'chat' },
         { path: '/diary', label: '日记', icon: '📖', id: 'diary' },
@@ -121,17 +121,44 @@ function renderNav(activePage) {
         { path: '/reader', label: '共读', icon: '📚', id: 'reader' },
         { path: '/cinema', label: '陪看', icon: '🎬', id: 'cinema' },
         { path: '/pet', label: '桌宠', icon: '🐱', id: 'pet' },
-        { path: '/panel', label: '管理', icon: '⚙️', id: 'panel' },
+    ];
+    const morePages = [
+        { path: '/apiconfig', label: 'API', icon: '🔌', id: 'apiconfig' },
+        { path: '/panel', label: '面板', icon: '⚙️', id: 'panel' },
     ];
     return `<nav class="main-nav">
         <div class="nav-brand" onclick="location.href='/'">苍聿居</div>
         <div class="nav-links">
-            ${pages.map(p => `<a href="${p.path}" class="nav-link ${activePage === p.id ? 'active' : ''}">${p.icon}<span class="nav-label">${p.label}</span></a>`).join('')}
+            ${mainPages.map(p => `<a href="${p.path}" class="nav-link ${activePage === p.id ? 'active' : ''}">${p.icon}<span class="nav-label">${p.label}</span></a>`).join('')}
+            <div class="nav-more">
+                <button class="more-btn" onclick="toggleMoreMenu(event)" title="更多">⋯</button>
+                <div class="more-dropdown" id="moreDropdown">
+                    ${morePages.map(p => `<a href="${p.path}" class="nav-link ${activePage === p.id ? 'active' : ''}">${p.icon}<span>${p.label}</span></a>`).join('')}
+                </div>
+            </div>
         </div>
         <button class="nav-theme" onclick="cycleTheme()" title="切换主题">🎨</button>
+        <style>
+        .nav-more{position:relative}
+        .more-btn{font-size:1.2rem;padding:6px 8px;border-radius:var(--radius);border:none;background:none;color:var(--muted);cursor:pointer;transition:all .2s}
+        .more-btn:hover{background:var(--accentLight);color:var(--accent)}
+        .more-dropdown{position:absolute;top:100%;right:0;background:var(--card);backdrop-filter:blur(20px);-webkit-backdrop-filter:blur(20px);border:1px solid var(--border);border-radius:var(--radius);padding:4px;display:none;z-index:1100;min-width:100px;box-shadow:0 4px 12px var(--shadow)}
+        .more-dropdown.show{display:flex;flex-direction:column}
+        .more-dropdown .nav-link{padding:8px 16px;border-radius:8px;white-space:nowrap}
+        </style>
     </nav>`;
 }
-
+function toggleMoreMenu(event) {
+    event.stopPropagation();
+    const dd = document.getElementById('moreDropdown');
+    if (dd) dd.classList.toggle('show');
+}
+document.addEventListener('click', function(e) {
+    const dd = document.getElementById('moreDropdown');
+    if (dd && dd.classList.contains('show') && !e.target.closest('.nav-more')) {
+        dd.classList.remove('show');
+    }
+});
 // ── 全局 CSS ──
 const GLOBAL_CSS = `
 *{margin:0;padding:0;box-sizing:border-box}
