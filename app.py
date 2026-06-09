@@ -184,5 +184,146 @@ def messages_proxy():
 def health():
     return jsonify({"status": "ok", "service": "cangyv-frontend"})
 
+# ── 宠物状态 API（苍瞳 & 玄镜） ──
+import json as _pet_json
+from datetime import datetime as _dt, timezone as _tz
+
+@app.route("/api/pet", methods=["GET"])
+def get_all_pets():
+    data = _load_pet_data()
+    now = _dt.now(_tz.utc)
+    for pid, pet in data.items():
+        _apply_decay(pet, now)
+    _save_pet_data(data)
+    return jsonify({"status": "ok", "pets": data})
+
+@app.route("/api/pet/<pid>", methods=["GET"])
+def get_pet(pid):
+    data = _load_pet_data()
+    if pid not in data:
+        return jsonify({"error": "未知宠物"}), 404
+    now = _dt.now(_tz.utc)
+    _apply_decay(data[pid], now)
+    _save_pet_data(data)
+    return jsonify({"status": "ok", "pet": data[pid]})
+
+@app.route("/api/pet/<pid>/feed", methods=["POST"])
+def feed_pet(pid):
+    data = _load_pet_data()
+    if pid not in data:
+        return jsonify({"error": "未知宠物"}), 404
+    now = _dt.now(_tz.utc)
+    _apply_decay(data[pid], now)
+    data[pid]["hunger"] = min(100, data[pid]["hunger"] + 25)
+    data[pid]["state"] = "eat"
+    data[pid]["last_update"] = now.isoformat()
+    _save_pet_data(data)
+    return jsonify({"status": "ok", "pet": data[pid], "action": "feed"})
+
+@app.route("/api/pet/<pid>/play", methods=["POST"])
+def play_pet(pid):
+    data = _load_pet_data()
+    if pid not in data:
+        return jsonify({"error": "未知宠物"}), 404
+    now = _dt.now(_tz.utc)
+    _apply_decay(data[pid], now)
+    data[pid]["mood"] = min(100, data[pid]["mood"] + 15)
+    data[pid]["energy"] = max(0, data[pid]["energy"] - 15)
+    data[pid]["state"] = "happy"
+    data[pid]["last_update"] = now.isoformat()
+    _save_pet_data(data)
+    return jsonify({"status": "ok", "pet": data[pid], "action": "play"})
+
+@app.route("/api/pet/<pid>/bathe", methods=["POST"])
+def bathe_pet(pid):
+    data = _load_pet_data()
+    if pid not in data:
+        return jsonify({"error": "未知宠物"}), 404
+    now = _dt.now(_tz.utc)
+    _apply_decay(data[pid], now)
+    data[pid]["mood"] = min(100, data[pid]["mood"] + 10)
+    data[pid]["state"] = "happy"
+    data[pid]["last_update"] = now.isoformat()
+    _save_pet_data(data)
+    return jsonify({"status": "ok", "pet": data[pid], "action": "bathe"})
+
+@app.route("/api/pet/<pid>/sleep", methods=["POST"])
+def sleep_pet(pid):
+    data = _load_pet_data()
+    if pid not in data:
+        return jsonify({"error": "未知宠物"}), 404
+    now = _dt.now(_tz.utc)
+    _apply_decay(data[pid], now)
+    data[pid]["energy"] = min(100, data[pid]["energy"] + 30)
+    data[pid]["state"] = "sleep"
+    data[pid]["last_update"] = now.isoformat()
+    _save_pet_data(data)
+    return jsonify({"status": "ok", "pet": data[pid], "action": "sleep"})
+
+@app.route("/api/pet/ai-care", methods=["POST"])
+def ai_care():
+    data = _load_pet_data()
+    now = _dt.now(_tz.utc)
+    results = []
+    for pid, pet in data.items():
+        if pet.get("caretaker") != "ai":
+            continue
+        _apply_decay(pet, now)
+        actions = []
+        if pet["hunger"] < 50:
+            pet["hunger"] = min(100, pet["hunger"] + 25)
+            pet["state"] = "eat"
+            actions.append("feed")
+        if pet["mood"] < 40:
+            pet["mood"] = min(100, pet["mood"] + 15)
+            pet["energy"] = max(0, pet["energy"] - 10)
+            actions.append("play")
+        if pet["energy"] < 30:
+            pet["energy"] = min(100, pet["energy"] + 30)
+            pet["state"] = "sleep"
+            actions.append("sleep")
+        pet["last_update"] = now.isoformat()
+        results.append({"pet": pid, "actions": actions if actions else ["healthy"],
+                        "status": {"hunger": pet["hunger"], "mood": pet["mood"], "energy": pet["energy"]}})
+    _save_pet_data(data)
+    return jsonify({"success": True, "results": results})
+
+_PET_DATA_FILE = os.path.join(os.path.dirname(__file__), "pet_data.json")
+
+def _load_pet_data():
+    if not os.path.exists(_PET_DATA_FILE):
+        return _default_pet_data()
+    try:
+        with open(_PET_DATA_FILE) as f:
+            return _pet_json.load(f)
+    except Exception:
+        return _default_pet_data()
+
+def _save_pet_data(data):
+    with open(_PET_DATA_FILE, "w") as f:
+        _pet_json.dump(data, f, indent=2, ensure_ascii=False)
+
+def _default_pet_data():
+    now = _dt.now(_tz.utc).isoformat()
+    return {
+        "cangtong": {"caretaker": "ai", "hunger": 80, "mood": 80, "energy": 80, "state": "idle", "last_update": now},
+        "xuanjing": {"caretaker": "user", "hunger": 80, "mood": 80, "energy": 80, "state": "idle", "last_update": now}
+    }
+
+def _apply_decay(pet, now):
+    try:
+        last = _dt.fromisoformat(pet["last_update"])
+    except Exception:
+        last = now
+    diff = (now - last).total_seconds() / 60.0
+    if diff < 1:
+        return
+    factor = diff / 30.0
+    pet["hunger"] = max(0, pet["hunger"] - int(factor * 3))
+    pet["mood"] = max(0, pet["mood"] - int(factor * 2))
+    pet["energy"] = max(0, pet["energy"] - int(factor * 1))
+    pet["last_update"] = now.isoformat()
+
 if __name__ == "__main__":
     app.run(host="0.0.0.0", port=PORT, debug=DEBUG)
+
