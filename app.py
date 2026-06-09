@@ -64,9 +64,11 @@ def api_proxy(path):
     if "X-Api-Key" not in headers and "x-api-key" not in headers:
         headers["X-API-Key"] = DEFAULT_API_KEY
     try:
+        # 将request.args转为普通dict，避免编码问题
+        params = {k: v for k, v in request.args.items()}
         resp = http_requests.request(
             method=request.method, url=target, headers=headers,
-            json=request.get_json(silent=True), params=request.args, timeout=30,
+            json=request.get_json(silent=True), params=params, timeout=30,
         )
         excluded = {"content-encoding", "transfer-encoding", "content-length", "connection"}
         resp_headers = {k: v for k, v in resp.headers.items() if k.lower() not in excluded}
