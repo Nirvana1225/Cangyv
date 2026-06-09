@@ -631,8 +631,11 @@ function renderDiaryCard(d) {
     const timeStr = formatTime(d.created_at);
     const isExpanded = expandedId === d.id;
 
+    const _lockChk = d.locked && !unlockedDiaryIds.has(d.id);
     let contentHtml;
-    if (isExpanded) {
+    if (_lockChk) {
+        contentHtml = '<div class="diary-locked-overlay" style="text-align:center;padding:20px 0;color:var(--muted);font-size:.9rem;">ð å·²å å¯ï¼éå¯ç æ¥ç</div>';
+    } else if (isExpanded) {
         contentHtml = `<div class="diary-content-full">${escapeHtml(d.content)}</div>`;
     } else {
         contentHtml = `<div class="diary-content-preview">${escapeHtml(d.content)}</div>`;
@@ -651,7 +654,7 @@ function renderDiaryCard(d) {
     }
 
     let commentsHtml = '';
-    if (isExpanded && d.comments && d.comments.length) {
+    if (isExpanded && !_lockChk && d.comments && d.comments.length) {
         commentsHtml = `<div class="comments-section">
             <div class="comments-title">💬 评论 (${d.comments.length})</div>
             ${d.comments.map(c => `<div class="comment-item">
@@ -665,7 +668,7 @@ function renderDiaryCard(d) {
     }
 
     let commentInputHtml = '';
-    if (isExpanded) {
+    if (isExpanded && !_lockChk) {
         commentInputHtml = `<div class="comment-input-row">
             <input type="text" id="comment-input-${d.id}" placeholder="写评论..." onkeydown="if(event.key==='Enter'){event.stopPropagation();addComment(${d.id})}">
             <button class="btn btn-sm btn-ghost" onclick="event.stopPropagation();addComment(${d.id})">发送</button>
