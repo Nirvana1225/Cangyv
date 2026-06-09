@@ -3,26 +3,25 @@
  * Canvas逐像素绘制，32×32放大3倍，支持多姿态动画
  * 
  * 双宠物控制模型：
- * - 狸花猫（苍瞳）：AI饲养（喂食/洗澡），用户控制动作
- * - 边牧（玄镜）：用户饲养（喂食/洗澡），AI控制动作
+ * - 狸花猫（小狸）：AI饲养（喂食/洗澡），用户控制动作（走/歪头/抬爪/握手/抓/咬）
+ * - 戴墨镜大狗（大墨）：用户饲养（喂食/洗澡），AI控制动作（走/歪头/抬爪/握手/抓/咬）
  */
 
 // ── 16色调色板 ──
 const PAL = {
-    body:       '#C4954A',  // 狸花猫棕褐色底色
-    stripe:     '#5A3820',  // 深棕条纹
-    belly:      '#E8DCC8',  // 肚子/下巴
-    eye:        '#8BC34A',  // 黄绿色眼睛
+    body:       '#A08060',  // 狸花猫底色
+    stripe:     '#5C4033',  // 条纹
+    belly:      '#E8DCC8',  // 肚子
+    eye:        '#4CAF50',  // 眼睛
     eyeWhite:   '#F0F0F0',  // 眼白
     nose:       '#D4849A',  // 鼻子
     earInner:   '#D4849A',  // 耳内
     paw:        '#6B5344',  // 爪子
-    tailStripe: '#5A3820',  // 尾巴条纹
-    // 边牧色
-    dogBody:    '#9A9A9A',  // 灰毛
-    dogDark:    '#404040',  // 深灰
-    dogBelly:   '#E8E8E8',  // 白围脖/肚子
-    dogWhite:   '#FFFFFF',  // 纯白（流星斑/爪尖）
+    tailStripe: '#5C4033',  // 尾巴条纹
+    // 大狗色
+    dogBody:    '#6B6B7B',
+    dogDark:    '#3A3A4A',
+    dogBelly:   '#9A9AAB',
     glassFrame: '#1a1a1a',
     glassLens:  '#2d2d5e',
     glassGlare: '#7c6cf0',
@@ -37,51 +36,52 @@ const CAT_COLORS = {
 // ── 狗调色板映射 ──
 const DOG_COLORS = {
     'A': 'dogBody', 'B': 'dogDark', 'C': 'dogBelly',
-    'D': 'glassFrame', 'E': 'glassLens', 'F': 'glassGlare', 'G': 'paw',
-    'H': 'dogWhite'
+    'D': 'glassFrame', 'E': 'glassLens', 'F': 'glassGlare', 'G': 'paw'
 };
 
 // ── 精灵数据（32×32） ──
+// 对称生成函数：左16列 + 右16列(反转) = 32列对称行
 function sym(L) { return L + L.split('').reverse().join(''); }
 
-// 狸花猫 idle
+// ═══════════════════════════════════════
+// 苍瞳 — 蛞蝓猫风格狸花猫
+// 豆豆眼、圆润小头、长条柔软身体、细条纹尾
+// ═══════════════════════════════════════
 const CAT_IDLE = (() => {
     const L = [
-        '0000000000000000',
-        '0000000110000000',
-        '0000001111000000',
-        '0000011711000000',
-        '0000011711000000',
-        '0000011111000000',
-        '0000001111111111',
-        '0000021111111112',
-        '0000001111111111',
-        '0000000115554411',
-        '0000000115554411',
-        '0000000111111166',
-        '0000000111111133',
-        '0000001111111111',
-        '0000012111111333',
-        '0000012111111333',
-        '0000012111111333',
-        '0000001111111111',
-        '0000000011188811',
-        '0000000011188811',
-        '0000000001111111',
-        '0000000000111111',
-        '0000000000000000',
-        '0000000000000000',
-        '0000000000000000',
-        '0000000000000000',
-        '0000000000000000',
-        '0000000000000000',
-        '0000000000000000',
-        '0000000000000000',
-        '0000000000000000',
-        '0000000000000000',
+        '0000000000000000',  // 0
+        '0000000000000000',  // 1
+        '0000000011000000',  // 2: tiny ear nubs
+        '0000000111000000',  // 3: head top round
+        '0000001111100000',  // 4: head wider
+        '0000011111111111',  // 5: head widest (continuous)
+        '0000021111111112',  // 6: M-stripe forehead
+        '0000011111111111',  // 7: upper face
+        '0000001111111111',  // 8: face — BEAN EYES here
+        '0000000111111111',  // 9: lower face
+        '0000000011111111',  // 10: nose area
+        '0000000001111111',  // 11: chin
+        '0000000001111111',  // 12: neck
+        '0000000011111111',  // 13: upper body
+        '0000001121111111',  // 14: body + back stripe
+        '0000001133111111',  // 15: body + belly
+        '0000001133111111',  // 16: body + belly
+        '0000001121111111',  // 17: body + back stripe
+        '0000000011111111',  // 18: lower body
+        '0000000000110000',  // 19: stubby paws
+        '0000000000110000',  // 20: stubby paws
+        '0000000000000000',  // 21-31
+        '0000000000000000', '0000000000000000', '0000000000000000', '0000000000000000',
+        '0000000000000000', '0000000000000000', '0000000000000000', '0000000000000000',
+        '0000000000000000', '0000000000000000',
     ];
     return L.map((l, y) => {
         const r = sym(l).split('');
+        // BEAN EYES — just 2px each, no eye whites!
+        if (y === 8) { r[12] = '4'; r[13] = '4'; r[18] = '4'; r[19] = '4'; }
+        // Tiny nose
+        if (y === 10) { r[15] = '6'; r[16] = '6'; }
+        // Thin striped tail curls right
         if (y === 14) { r[24] = '1'; r[25] = '9'; }
         if (y === 15) { r[25] = '1'; r[26] = '9'; }
         if (y === 16) { r[26] = '1'; r[27] = '9'; }
@@ -93,185 +93,191 @@ const CAT_IDLE = (() => {
     });
 })();
 
-// 狸花猫 sleep
+// 苍瞳 sleep — 蛞蝓猫趴着，头在左，身体向右延伸
 const CAT_SLEEP = (() => {
     const s = Array(32).fill(null).map(() => Array(32).fill('0'));
-    s[10][5]='1'; s[10][6]='1'; s[10][11]='1'; s[10][12]='1';
-    s[11][4]='1'; s[11][5]='7'; s[11][6]='1'; s[11][7]='1'; s[11][10]='1'; s[11][11]='1'; s[11][12]='7'; s[11][13]='1';
-    s[12][4]='1'; s[12][5]='7'; s[12][6]='1'; s[12][7]='1'; s[12][10]='1'; s[12][11]='1'; s[12][12]='7'; s[12][13]='1';
-    for (let x=4; x<=13; x++) s[13][x]='1';
-    s[14][5]='5'; s[14][6]='4'; s[14][7]='5'; s[14][10]='5'; s[14][11]='4'; s[14][12]='5';
-    s[15][8]='6'; s[15][9]='6';
-    for (let x=7; x<=10; x++) s[16][x]='3';
-    for (let x=12; x<=27; x++) s[14][x]='1';
-    s[14][16]='2'; s[14][22]='2';
-    for (let x=13; x<=27; x++) s[15][x]='1';
-    s[15][16]='2'; s[15][22]='2';
-    for (let x=14; x<=26; x++) s[16][x]='1';
-    s[16][16]='2'; s[16][22]='2';
-    for (let x=15; x<=23; x++) s[17][x]='3';
-    for (let x=14; x<=24; x++) s[18][x]='3';
-    for (let x=15; x<=23; x++) s[19][x]='3';
-    for (let x=16; x<=22; x++) s[20][x]='1';
-    s[17][5]='8'; s[17][6]='8'; s[17][11]='8'; s[17][12]='8';
-    s[18][5]='8'; s[18][6]='8'; s[18][11]='8'; s[18][12]='8';
-    s[20][25]='8'; s[20][26]='8';
-    s[21][25]='8'; s[21][26]='8';
-    s[18][27]='9'; s[18][28]='1';
-    s[17][28]='9'; s[17][29]='1';
-    s[16][29]='9'; s[16][30]='1';
-    s[15][30]='9';
+    // 头（行12-17）— 圆润小头，闭眼
+    for (let x = 4; x <= 12; x++) s[12][x] = '1';
+    s[12][5] = '2'; s[12][10] = '2';  // 额头条纹
+    for (let x = 3; x <= 13; x++) s[13][x] = '1';
+    s[13][5] = '2'; s[13][10] = '2';
+    for (let x = 3; x <= 13; x++) s[14][x] = '1';
+    // 闭眼（一条线）
+    s[14][6] = '1'; s[14][7] = '1'; s[14][10] = '1'; s[14][11] = '1';
+    for (let x = 4; x <= 12; x++) s[15][x] = '1';
+    s[15][8] = '6'; s[15][9] = '6';  // 鼻子
+    for (let x = 5; x <= 11; x++) s[16][x] = '3';  // 下巴
+    // 耳朵小突起
+    s[11][5] = '1'; s[11][6] = '1'; s[11][10] = '1'; s[11][11] = '1';
+    // 身体（行14-21，列12-27）— 长条柔软
+    for (let x = 13; x <= 27; x++) s[14][x] = '1';
+    s[14][18] = '2'; s[14][24] = '2';  // 背条纹
+    for (let x = 13; x <= 27; x++) s[15][x] = '1';
+    s[15][18] = '2'; s[15][24] = '2';
+    for (let x = 14; x <= 26; x++) s[16][x] = '1';
+    for (let x = 16; x <= 24; x++) s[17][x] = '3';  // 肚子
+    for (let x = 15; x <= 25; x++) s[18][x] = '3';
+    for (let x = 16; x <= 24; x++) s[19][x] = '1';
+    for (let x = 17; x <= 23; x++) s[20][x] = '1';
+    // 前爪
+    s[17][6] = '8'; s[17][7] = '8'; s[17][11] = '8'; s[17][12] = '8';
+    s[18][6] = '8'; s[18][7] = '8'; s[18][11] = '8'; s[18][12] = '8';
+    // 后爪
+    s[21][25] = '8'; s[21][26] = '8';
+    s[22][25] = '8'; s[22][26] = '8';
+    // 细条纹尾巴
+    s[19][27] = '9'; s[19][28] = '1';
+    s[18][28] = '9'; s[18][29] = '1';
+    s[17][29] = '9'; s[17][30] = '1';
+    s[16][30] = '9';
     return s.map(r => r.join(''));
 })();
 
-// ── 大狗精灵 ──
-// 灰色边牧 idle - 正面蹲坐戴墨镜
-const DOG_IDLE = (() => {
-    const s = Array(32).fill(null).map(() => Array(32).fill('0'));
-    // 耳朵（边牧立耳）- 行1-5
-    s[1][7]='A'; s[1][8]='B'; s[1][23]='A'; s[1][24]='B';
-    s[2][6]='A'; s[2][7]='A'; s[2][8]='B'; s[2][23]='A'; s[2][24]='B'; s[2][25]='A';
-    s[3][5]='A'; s[3][6]='A'; s[3][7]='B'; s[3][8]='A'; s[3][9]='A';
-    s[3][22]='A'; s[3][23]='A'; s[3][24]='B'; s[3][25]='A'; s[3][26]='A';
-    s[4][5]='A'; s[4][6]='A'; s[4][7]='B'; s[4][8]='A'; s[4][9]='A';
-    s[4][22]='A'; s[4][23]='A'; s[4][24]='B'; s[4][25]='A'; s[4][26]='A';
-    s[5][5]='A'; s[5][6]='A'; s[5][7]='A'; s[5][8]='A'; s[5][9]='A';
-    s[5][22]='A'; s[5][23]='A'; s[5][24]='A'; s[5][25]='A'; s[5][26]='A';
-    // 头 - 行6-8
-    for (let x=6; x<=25; x++) { s[6][x]='A'; s[7][x]='A'; }
-    // 白色流星斑（额头到鼻梁）- 行6-13居中
-    for (let x=13; x<=18; x++) s[6][x]='H';
-    for (let x=14; x<=17; x++) s[7][x]='H';
-    // 头部两侧深灰
-    for (let x=6; x<=8; x++) { s[8][x]='B'; s[8][23]='B'; }
-    for (let x=9; x<=22; x++) s[8][x]='A';
-    // 墨镜 - 行9-11
-    for (let x=6; x<=25; x++) { s[9][x]='D'; s[10][x]='D'; s[11][x]='D'; }
-    // 白色流星斑穿过墨镜上方
-    for (let x=14; x<=17; x++) s[9][x]='H';
-    s[10][8]='E'; s[10][9]='E'; s[10][10]='E'; s[10][11]='E';
-    s[11][8]='E'; s[11][9]='F'; s[11][10]='E'; s[11][11]='E';
-    s[10][20]='E'; s[10][21]='E'; s[10][22]='E'; s[10][23]='E';
-    s[11][20]='E'; s[11][21]='E'; s[11][22]='E'; s[11][23]='E';
-    // 墨镜下方 - 行12-15
-    for (let x=6; x<=25; x++) s[12][x]='A';
-    for (let x=14; x<=17; x++) s[12][x]='H';  // 流星斑延续
-    for (let x=7; x<=24; x++) s[13][x]='A';
-    for (let x=14; x<=17; x++) s[13][x]='H';  // 流星斑到鼻梁
-    for (let x=8; x<=23; x++) s[14][x]='A';
-    s[14][14]='B'; s[14][15]='B'; s[14][16]='B'; s[14][17]='B';  // 鼻子
-    for (let x=9; x<=22; x++) s[15][x]='A';
-    s[15][13]='C'; s[15][18]='C';  // 嘴边白毛
-    // 身体 - 行16-21
-    for (let x=7; x<=24; x++) s[16][x]='C';  // 白色围脖
-    for (let x=5; x<=26; x++) s[17][x]='A';
-    s[17][5]='B'; s[17][26]='B';
-    for (let x=5; x<=26; x++) s[18][x]='A';
-    for (let x=10; x<=21; x++) s[18][x]='C';
-    for (let x=5; x<=26; x++) s[19][x]='A';
-    for (let x=10; x<=21; x++) s[19][x]='C';
-    for (let x=6; x<=25; x++) s[20][x]='A';
-    for (let x=11; x<=20; x++) s[20][x]='C';
-    for (let x=7; x<=24; x++) s[21][x]='A';
-    // 前腿 - 行22-24
-    for (let x=7; x<=11; x++) s[22][x]='A';
-    for (let x=20; x<=24; x++) s[22][x]='A';
-    for (let x=12; x<=19; x++) s[22][x]='C';
-    for (let x=7; x<=11; x++) s[23][x]='A';
-    for (let x=20; x<=24; x++) s[23][x]='A';
-    for (let x=12; x<=19; x++) s[23][x]='C';
-    for (let x=7; x<=11; x++) s[24][x]='H';   // 白爪
-    for (let x=20; x<=24; x++) s[24][x]='H';  // 白爪
-    // 尾巴
-    s[17][27]='B'; s[17][28]='A';
-    s[18][28]='B'; s[18][29]='A';
-    s[19][27]='B'; s[19][28]='A';
-    s[20][26]='B';
-    return s.map(r => r.join(''));
-})();
-
-// ── 猫派生姿态 ──
+// 苍瞳 happy — 豆豆眼变弯月眯眼
 const CAT_HAPPY = (() => {
     const f = CAT_IDLE.map(r => r.split(''));
-    for (let x = 8; x <= 12; x++) { f[9][x] = '1'; f[10][x] = '1'; }
-    for (let x = 19; x <= 23; x++) { f[9][x] = '1'; f[10][x] = '1'; }
-    f[9][8]='5'; f[9][9]='4'; f[9][10]='5';
-    f[9][21]='5'; f[9][22]='4'; f[9][23]='5';
-    f[12][13]='3'; f[12][18]='3';
+    // 眯眼：清除bean eye，换成弯月线
+    if (f[8]) { f[8][12] = '1'; f[8][13] = '4'; f[8][18] = '4'; f[8][19] = '1'; }
+    // 微笑
+    if (f[11]) { f[11][13] = '3'; f[11][18] = '3'; }
     return f.map(r => r.join(''));
 })();
 
+// 苍瞳 scratch — 伸爪，身体前倾
 const CAT_SCRATCH = (() => {
     const f = CAT_IDLE.map(r => r.split(''));
-    for (let y = 1; y <= 16; y++) {
+    // 身体前倾：头部和上身向左偏1像素
+    for (let y = 2; y <= 17; y++) {
         for (let x = 0; x < 31; x++) f[y][x] = f[y][x+1];
         f[y][31] = '0';
     }
-    for (let x = 3; x <= 6; x++) f[16][x] = '8';
-    for (let x = 2; x <= 5; x++) f[17][x] = '8';
+    // 伸爪
+    for (let x = 3; x <= 5; x++) f[17][x] = '8';
+    for (let x = 2; x <= 4; x++) f[18][x] = '8';
     return f.map(r => r.join(''));
 })();
 
+// 苍瞳 eat — 低头吃
 const CAT_EAT = (() => {
     const f = CAT_IDLE.map(r => r.split(''));
-    for (let y = 1; y <= 12; y++) {
+    // 清除原头部
+    for (let y = 2; y <= 12; y++)
         for (let x = 0; x < 32; x++) f[y][x] = '0';
-    }
-    const headRows = [
-        '00000001100000000000000110000000',
-        '00000011110000000000001111000000',
-        '00000117110000000000011711000000',
-        '00000117110000000000011711000000',
-        '00000111110000000000011111000000',
-        '00000011111111111111111111000000',
-        '00000211111111121111111111200000',
-        '00000011111111111111111111000000',
-        '00000001155544111144555110000000',
-        '00000001155544111144555110000000',
-        '00000001111111666611111110000000',
-        '00000001111111333311111110000000',
+    // 头部下移2行
+    const headData = [
+        { y: 4, l: '00000000110000000000001100000000' },
+        { y: 5, l: '00000001110000000000011100000000' },
+        { y: 6, l: '00000011111000000000111110000000' },
+        { y: 7, l: '00000111111111111111111111100000' },
+        { y: 8, l: '00000211111111121111111112000000' },
+        { y: 9, l: '00000111111111111111111111000000' },
+        { y: 10, l: '00000011111111111111111110000000' },
+        { y: 11, l: '00000001111111111111111100000000' },
+        { y: 12, l: '00000000111111111111111000000000' },
+        { y: 13, l: '00000000011111111111110000000000' },
+        { y: 14, l: '00000000011111111111110000000000' },
     ];
-    for (let i = 0; i < headRows.length; i++) {
-        for (let x = 0; x < 32; x++) f[i + 3][x] = headRows[i][x];
-    }
-    const bodyRows = [
-        '00000011111111111111111111000000',
-        '00000121111113333311111112100000',
-        '00000121111113333311111112100000',
-        '00000121111113333311111112100000',
-        '00000011111111111111111111000000',
-    ];
-    for (let i = 0; i < bodyRows.length; i++) {
-        for (let x = 0; x < 32; x++) f[i + 13][x] = bodyRows[i][x];
-    }
-    for (let x = 14; x <= 17; x++) f[14][x] = '6';
-    f[14][12] = '3'; f[14][13] = '3';
+    for (const h of headData)
+        for (let x = 0; x < 32; x++) f[h.y][x] = h.l[x];
+    // Bean eyes on row 10
+    f[10][12] = '4'; f[10][13] = '4'; f[10][18] = '4'; f[10][19] = '4';
+    // Nose
+    f[12][15] = '6'; f[12][16] = '6';
+    // Mouth open
+    f[13][14] = '6'; f[13][15] = '6'; f[13][16] = '6'; f[13][17] = '6';
+    // Food
+    f[13][12] = '3'; f[13][13] = '3';
     return f.map(r => r.join(''));
 })();
 
+// 苍瞳 tilt — 歪头
 const CAT_TILT = (() => {
     const f = CAT_IDLE.map(r => r.split(''));
-    for (let y = 1; y <= 10; y++) {
+    for (let y = 2; y <= 11; y++) {
         for (let x = 30; x >= 1; x--) f[y][x] = f[y][x-1];
         f[y][0] = '0';
     }
     return f.map(r => r.join(''));
 })();
 
+// 苍瞳 paw — 抬爪
 const CAT_PAW = (() => {
     const f = CAT_IDLE.map(r => r.split(''));
-    for (let x = 18; x <= 20; x++) { f[18][x] = '1'; f[19][x] = '0'; }
-    for (let x = 18; x <= 20; x++) f[16][x] = '8';
+    // 清除右爪
+    for (let x = 20; x <= 21; x++) { f[19][x] = '0'; f[20][x] = '0'; }
+    // 抬起
+    for (let x = 19; x <= 21; x++) f[17][x] = '8';
     return f.map(r => r.join(''));
 })();
 
+// 苍瞳 bite — 张嘴伸爪
 const CAT_BITE = (() => {
     const f = CAT_SCRATCH.map(r => r.split(''));
-    for (let x = 14; x <= 17; x++) f[12][x] = '6';
+    // 张嘴
+    for (let x = 14; x <= 17; x++) f[11][x] = '6';
     return f.map(r => r.join(''));
 })();
 
-// ── 狗派生姿态 ──
+// ═══════════════════════════════════════
+// 玄镜 — 蛞蝓猫风格边牧大狗
+// 戴墨镜、长条柔软身体、白色围脖、蓬松尾巴
+// ═══════════════════════════════════════
+const DOG_IDLE = (() => {
+    const s = Array(32).fill(null).map(() => Array(32).fill('0'));
+    // 小圆耳 — 行2-4（蛞蝓猫风格小突起）
+    s[2][9]='A'; s[2][10]='A'; s[2][21]='A'; s[2][22]='A';
+    s[3][8]='A'; s[3][9]='B'; s[3][10]='A'; s[3][21]='A'; s[3][22]='B'; s[3][23]='A';
+    s[4][8]='A'; s[4][9]='A'; s[4][10]='A'; s[4][21]='A'; s[4][22]='A'; s[4][23]='A';
+    // 圆润头部 — 行5-9（比猫大一圈）
+    for (let x=7; x<=24; x++) s[5][x]='A';
+    for (let x=6; x<=25; x++) s[6][x]='A';
+    for (let x=6; x<=25; x++) s[7][x]='A';
+    for (let x=7; x<=24; x++) s[8][x]='A';
+    for (let x=8; x<=23; x++) s[9][x]='A';
+    // 墨镜 — 行7-8（灵魂特征！）
+    for (let x=7; x<=24; x++) { s[7][x]='D'; s[8][x]='D'; }
+    // 镜片 — 左右各一块
+    for (let x=8; x<=13; x++) s[7][x]='E';
+    s[8][9]='F'; s[8][10]='F';  // 左镜片反光
+    for (let x=18; x<=23; x++) s[7][x]='E';
+    s[8][20]='F'; s[8][21]='F';  // 右镜片反光
+    // 鼻子 — 行10
+    for (let x=9; x<=22; x++) s[10][x]='A';
+    s[10][14]='B'; s[10][15]='B'; s[10][16]='B'; s[10][17]='B';
+    // 嘴 — 行11
+    for (let x=10; x<=21; x++) s[11][x]='A';
+    // 白色围脖 — 行12
+    for (let x=8; x<=23; x++) s[12][x]='A';
+    for (let x=10; x<=21; x++) s[12][x]='C';
+    // 长条身体 — 行13-19（蛞蝓猫风格长条柔软）
+    for (let x=7; x<=24; x++) s[13][x]='A';
+    for (let x=10; x<=21; x++) s[13][x]='C';
+    for (let x=6; x<=25; x++) s[14][x]='A';
+    for (let x=11; x<=20; x++) s[14][x]='C';
+    for (let x=6; x<=25; x++) s[15][x]='A';
+    for (let x=11; x<=20; x++) s[15][x]='C';
+    for (let x=6; x<=25; x++) s[16][x]='A';
+    for (let x=11; x<=20; x++) s[16][x]='C';
+    for (let x=6; x<=25; x++) s[17][x]='A';
+    for (let x=11; x<=20; x++) s[17][x]='C';
+    for (let x=7; x<=24; x++) s[18][x]='A';
+    for (let x=12; x<=19; x++) s[18][x]='C';
+    for (let x=8; x<=23; x++) s[19][x]='A';
+    // 短腿 — 行20-21
+    for (let x=9; x<=12; x++) { s[20][x]='A'; s[21][x]='A'; }
+    for (let x=19; x<=22; x++) { s[20][x]='A'; s[21][x]='A'; }
+    s[20][10]='G'; s[20][11]='G'; s[20][20]='G'; s[20][21]='G';
+    // 蓬松尾巴 — 向右上方翘起
+    s[14][26]='A'; s[14][27]='A';
+    s[15][27]='A'; s[15][28]='A';
+    s[16][28]='A'; s[16][29]='A';
+    s[17][29]='A'; s[17][30]='A';
+    s[16][30]='A'; s[16][31]='A';
+    s[15][30]='A'; s[15][31]='A';
+    return s.map(r => r.join(''));
+})();
+
+// 大狗变体生成器
 function dogVariant(base, modifyFn) {
     const f = base.map(r => r.split(''));
     modifyFn(f);
@@ -279,16 +285,19 @@ function dogVariant(base, modifyFn) {
 }
 
 const DOG_HAPPY = dogVariant(DOG_IDLE, f => {
-    for (let y = 10; y <= 11; y++)
+    // 眯眼：镜片反光消失，镜片变暗
+    for (let y = 7; y <= 8; y++)
         for (let x = 0; x < 32; x++)
             if (f[y][x] === 'E' || f[y][x] === 'F') f[y][x] = 'D';
 });
 
 const DOG_SLEEP = dogVariant(DOG_IDLE, f => {
-    for (let y = 10; y <= 11; y++)
+    // 闭眼：镜片变暗
+    for (let y = 7; y <= 8; y++)
         for (let x = 0; x < 32; x++)
             if (f[y][x] === 'E' || f[y][x] === 'F') f[y][x] = 'D';
-    for (let y = 29; y >= 4; y--)
+    // 下移2行模拟趴下
+    for (let y = 29; y >= 2; y--)
         for (let x = 0; x < 32; x++)
             f[Math.min(y+2,31)][x] = f[y][x];
     for (let y = 0; y < 4; y++)
@@ -297,7 +306,8 @@ const DOG_SLEEP = dogVariant(DOG_IDLE, f => {
 });
 
 const DOG_EAT = dogVariant(DOG_IDLE, f => {
-    for (let y = 15; y >= 1; y--)
+    // 低头：头部下移2行
+    for (let y = 19; y >= 1; y--)
         for (let x = 0; x < 32; x++)
             f[Math.min(y+2,31)][x] = f[y][x];
     for (let y = 0; y < 3; y++)
@@ -306,21 +316,25 @@ const DOG_EAT = dogVariant(DOG_IDLE, f => {
 });
 
 const DOG_TILT = dogVariant(DOG_IDLE, f => {
-    for (let y = 1; y <= 15; y++) {
+    // 歪头：头部右偏1像素
+    for (let y = 2; y <= 11; y++) {
         for (let x = 30; x >= 1; x--) f[y][x] = f[y][x-1];
         f[y][0] = '0';
     }
 });
 
 const DOG_PAW = dogVariant(DOG_IDLE, f => {
-    for (let x = 20; x <= 24; x++) { f[23][x] = '0'; f[24][x] = '0'; }
-    for (let x = 21; x <= 24; x++) f[20][x] = 'G';
+    // 抬右前爪
+    for (let x = 19; x <= 22; x++) { f[20][x] = '0'; f[21][x] = '0'; }
+    for (let x = 19; x <= 21; x++) f[18][x] = 'G';
 });
 
 const DOG_BITE = dogVariant(DOG_IDLE, f => {
-    for (let x = 14; x <= 17; x++) f[15][x] = 'B';
-    for (let x = 20; x <= 24; x++) { f[23][x] = '0'; f[24][x] = '0'; }
-    for (let x = 21; x <= 24; x++) f[20][x] = 'G';
+    // 张嘴
+    for (let x = 14; x <= 17; x++) f[11][x] = 'B';
+    // 伸右前爪
+    for (let x = 19; x <= 22; x++) { f[20][x] = '0'; f[21][x] = '0'; }
+    for (let x = 19; x <= 21; x++) f[18][x] = 'G';
 });
 
 // ── 精灵映射 ──
@@ -358,11 +372,15 @@ class PixelPetRenderer {
 
 // ── 宠物状态机 ──
 class PixelPet {
+    /**
+     * @param {string} config.caretaker - 谁饲养（喂食/洗澡）：'ai' | 'user'
+     * @param {string} config.actionController - 谁控制动作：'ai' | 'user'
+     */
     constructor(config) {
         this.name = config.name;
-        this.type = config.type;
-        this.caretaker = config.caretaker;
-        this.actionController = config.actionController;
+        this.type = config.type;           // 'cat' | 'dog'
+        this.caretaker = config.caretaker; // 谁饲养：'ai' | 'user'
+        this.actionController = config.actionController; // 谁控制动作：'ai' | 'user'
         this.hunger = config.hunger ?? 70;
         this.mood = config.mood ?? 70;
         this.energy = config.energy ?? 70;
@@ -375,20 +393,25 @@ class PixelPet {
         this._aiInterval = null;
         this._caretakerInterval = null;
     }
+
     start() {
         this._decayInterval = setInterval(() => this._decay(), 5000);
+        // AI控制动作的宠物：自动做动作
         if (this.actionController === 'ai') {
             this._aiInterval = setInterval(() => this._aiAct(), 6000);
         }
+        // AI饲养的宠物：AI自动喂食
         if (this.caretaker === 'ai') {
             this._caretakerInterval = setInterval(() => this._aiCare(), 10000);
         }
     }
+
     stop() {
         if (this._decayInterval) clearInterval(this._decayInterval);
         if (this._aiInterval) clearInterval(this._aiInterval);
         if (this._caretakerInterval) clearInterval(this._caretakerInterval);
     }
+
     _decay() {
         this.hunger = Math.max(0, this.hunger - 0.3);
         this.mood = Math.max(0, this.mood - 0.2);
@@ -397,6 +420,8 @@ class PixelPet {
         else if (this.hunger < 20 && this.state !== 'eat') this.setState('eat');
         this.onStatsChange(this.getStats());
     }
+
+    // AI自动控制动作（走动/歪头/抬爪/握手/抓/咬）
     _aiAct() {
         const actions = ['idle', 'idle', 'tilt', 'paw', 'scratch'];
         if (this.mood > 60) actions.push('happy');
@@ -405,6 +430,8 @@ class PixelPet {
         const action = actions[Math.floor(Math.random() * actions.length)];
         this.doAction(action);
     }
+
+    // AI自动饲养（喂食/洗澡）
     _aiCare() {
         if (this.hunger < 40) {
             this.hunger = Math.min(100, this.hunger + 20);
@@ -416,20 +443,26 @@ class PixelPet {
         }
         this.onStatsChange(this.getStats());
     }
+
+    // 执行动作（任何人都可以调用，但UI层控制权限）
     doAction(action) {
         const validActions = ['idle', 'sleep', 'happy', 'scratch', 'eat', 'tilt', 'paw', 'bite'];
         if (!validActions.includes(action)) return;
         this.setState(action);
+        // 动作3秒后回到idle
         if (action !== 'idle' && action !== 'sleep' && action !== 'eat') {
             setTimeout(() => { if (this.state === action) this.setState('idle'); }, 3000);
         }
     }
+
     setState(newState) {
         if (this.state === newState) return;
         this.state = newState;
         this.stateTimer = Date.now();
         this.onStateChange(newState);
     }
+
+    // 用户饲养操作（喂食/洗澡/玩耍）— 仅对caretaker='user'的宠物有效
     feed() {
         if (this.caretaker !== 'user') return false;
         this.hunger = Math.min(100, this.hunger + 25);
@@ -439,6 +472,7 @@ class PixelPet {
         this.onActionLog(`${this.name}被你喂了食物 🍖`);
         return true;
     }
+
     bathe() {
         if (this.caretaker !== 'user') return false;
         this.mood = Math.min(100, this.mood + 20);
@@ -448,6 +482,7 @@ class PixelPet {
         this.onActionLog(`${this.name}被你洗了澡 🛁`);
         return true;
     }
+
     play() {
         if (this.caretaker !== 'user') return false;
         this.mood = Math.min(100, this.mood + 15);
@@ -458,9 +493,11 @@ class PixelPet {
         this.onActionLog(`${this.name}和你玩耍 🎾`);
         return true;
     }
+
     getStats() {
         return { hunger: this.hunger, mood: this.mood, energy: this.energy, state: this.state };
     }
+
     getSprite() {
         const sprites = this.type === 'cat' ? CAT_SPRITES : DOG_SPRITES;
         const colors = this.type === 'cat' ? CAT_COLORS : DOG_COLORS;
