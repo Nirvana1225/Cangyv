@@ -541,7 +541,8 @@ class PetAnimator {
         const bobY = Math.sin(this._bobPhase) * (this.pet.state === 'sleep' ? 0 : 1);
         this.renderer.clear();
         const { sprite, colorMap } = this.pet.getSprite();
-        this.renderer.draw(sprite, colorMap, 0, Math.round(bobY));
+        const offsetY = this.pet.type === 'cat' ? 2 : 0;
+        this.renderer.draw(sprite, colorMap, 0, Math.round(bobY) + offsetY);
         this._raf = requestAnimationFrame(() => this._animate());
     }
 }
