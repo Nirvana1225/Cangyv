@@ -118,6 +118,7 @@ function renderNav(activePage) {
         { path: '/reader', label: '共读', icon: '📚', id: 'reader' },
         { path: '/cinema', label: '陪看', icon: '🎬', id: 'cinema' },
         { path: '/pet', label: '桌宠', icon: '🐱', id: 'pet' },
+        { path: '/apiconfig', label: 'API', icon: '🔌', id: 'apiconfig' },
         { path: '/panel', label: '面板', icon: '⚙️', id: 'panel' },
     ];
     return `<nav class="main-nav">
@@ -216,6 +217,14 @@ textarea{resize:vertical;min-height:80px}
 @media(max-width:768px){
     .desktop-only{display:none!important}
 }
+
+/* 页面过渡 */
+.page-fade-in{animation:pageFadeIn .3s ease-out both}
+@keyframes pageFadeIn{from{opacity:0;transform:translateY(8px)}to{opacity:1;transform:translateY(0)}}
+
+/* 全局加载遮罩 */
+.page-loading{position:fixed;inset:0;background:var(--bg);z-index:9998;display:flex;align-items:center;justify-content:center;transition:opacity .3s}
+.page-loading.hide{opacity:0;pointer-events:none}
 `;
 
 // ── 跨设备历史同步系统 ──
@@ -324,9 +333,24 @@ syncManager.register('cangyv_game_score');
 syncManager.register('cangyv_pet_state');
 syncManager.register('cangyv_diary_data');
 syncManager.register('cangyv_chat_history');
+syncManager.register('cangyv-api-sites');
 
 // ── 初始化 ──
 document.addEventListener('DOMContentLoaded', () => {
     initTheme();
     syncManager.startAutoSync();
+
+    // 页面入场动画
+    const mainContent = document.querySelector('.container, .chat-layout, .page-container');
+    if (mainContent) mainContent.classList.add('page-fade-in');
+
+    // 全局键盘快捷键
+    document.addEventListener('keydown', (e) => {
+        // Ctrl+K: 聚焦搜索框
+        if ((e.ctrlKey || e.metaKey) && e.key === 'k') {
+            e.preventDefault();
+            const searchInput = document.querySelector('#searchInput, #sessionSearch, #modelSearch');
+            if (searchInput) searchInput.focus();
+        }
+    });
 });

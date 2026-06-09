@@ -1,0 +1,597 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>API 配置 · 苍聿居</title>
+<link rel="manifest" href="/manifest.json">
+<style id="global-css"></style>
+<style>
+/* ── API 配置页面专属样式 ── */
+
+.page-header {
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    margin-bottom: 24px;
+    padding: 0 4px;
+    min-height: 44px;
+}
+.page-header h1 {
+    font-size: 1.5rem;
+    font-weight: 700;
+    color: var(--text);
+}
+.page-header h1 span {
+    color: var(--accent);
+}
+
+/* ── 标签页切换 ── */
+.tab-bar {
+    display: flex;
+    gap: 4px;
+    margin-bottom: 20px;
+    border-bottom: 1px solid var(--border);
+    padding-bottom: 0;
+}
+.tab-btn {
+    padding: 10px 20px;
+    font-size: .88rem;
+    font-weight: 500;
+    color: var(--muted);
+    border-bottom: 2px solid transparent;
+    transition: all .2s;
+    margin-bottom: -1px;
+}
+.tab-btn:hover {
+    color: var(--accent);
+}
+.tab-btn.active {
+    color: var(--accent);
+    border-bottom-color: var(--accent);
+    font-weight: 600;
+}
+.tab-content {
+    display: none;
+}
+.tab-content.active {
+    display: block;
+}
+
+/* ── API 站点卡片 ── */
+.site-card {
+    background: var(--card);
+    backdrop-filter: blur(12px);
+    -webkit-backdrop-filter: blur(12px);
+    border: 1px solid var(--border);
+    border-radius: var(--radius-lg);
+    padding: 16px 18px;
+    margin-bottom: 12px;
+    transition: all .25s;
+}
+.site-card:hover {
+    box-shadow: 0 4px 24px var(--shadow);
+}
+.site-card-header {
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    margin-bottom: 10px;
+}
+.site-name {
+    font-size: .95rem;
+    font-weight: 600;
+    color: var(--text);
+    display: flex;
+    align-items: center;
+    gap: 8px;
+}
+.site-status-dot {
+    width: 8px;
+    height: 8px;
+    border-radius: 50%;
+    flex-shrink: 0;
+}
+.site-status-dot.online { background: #27ae60; box-shadow: 0 0 6px rgba(39,174,96,.4); }
+.site-status-dot.offline { background: #e74c3c; box-shadow: 0 0 6px rgba(231,76,60,.4); }
+.site-status-dot.unknown { background: var(--muted); }
+
+.site-actions {
+    display: flex;
+    gap: 4px;
+}
+.site-action-btn {
+    width: 30px;
+    height: 30px;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    border-radius: 8px;
+    font-size: .82rem;
+    transition: background .15s;
+}
+.site-action-btn:hover { background: var(--accentLight); }
+.site-action-btn.danger:hover { background: rgba(231,76,60,.1); color: #e74c3c; }
+
+.site-info {
+    font-size: .82rem;
+    color: var(--muted);
+    line-height: 1.6;
+}
+.site-info .info-row {
+    display: flex;
+    align-items: center;
+    gap: 6px;
+    margin-bottom: 2px;
+}
+.site-info .info-label {
+    color: var(--text);
+    font-weight: 500;
+    min-width: 60px;
+}
+.site-info .info-value {
+    word-break: break-all;
+}
+.site-info .api-key-masked {
+    font-family: 'SF Mono', 'Fira Code', 'Consolas', monospace;
+    font-size: .78rem;
+    letter-spacing: .5px;
+}
+
+/* ── 模型卡片 ── */
+.model-grid {
+    display: grid;
+    grid-template-columns: repeat(auto-fill, minmax(260px, 1fr));
+    gap: 12px;
+}
+.model-card {
+    background: var(--card);
+    backdrop-filter: blur(12px);
+    -webkit-backdrop-filter: blur(12px);
+    border: 1px solid var(--border);
+    border-radius: var(--radius-lg);
+    padding: 14px 16px;
+    transition: all .25s;
+}
+.model-card:hover {
+    box-shadow: 0 4px 20px var(--shadow);
+    transform: translateY(-2px);
+}
+.model-card-header {
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    margin-bottom: 8px;
+}
+.model-name {
+    font-size: .88rem;
+    font-weight: 600;
+    color: var(--text);
+    word-break: break-all;
+}
+.model-available {
+    font-size: .7rem;
+    padding: 2px 8px;
+    border-radius: 10px;
+    font-weight: 500;
+}
+.model-available.yes { background: rgba(39,174,96,.1); color: #27ae60; }
+.model-available.no { background: rgba(231,76,60,.1); color: #e74c3c; }
+
+.model-meta {
+    font-size: .78rem;
+    color: var(--muted);
+    line-height: 1.5;
+}
+.model-meta span {
+    display: inline-block;
+    margin-right: 10px;
+}
+
+/* ── 搜索/过滤 ── */
+.filter-bar {
+    display: flex;
+    gap: 8px;
+    margin-bottom: 16px;
+    align-items: center;
+}
+.filter-bar input {
+    flex: 1;
+    padding: 10px 14px;
+    border-radius: var(--radius);
+    font-size: .88rem;
+}
+.filter-bar .btn {
+    flex-shrink: 0;
+}
+
+/* ── 空状态 ── */
+.empty-state {
+    text-align: center;
+    padding: 60px 20px;
+    color: var(--muted);
+}
+.empty-state .icon {
+    font-size: 3rem;
+    margin-bottom: 12px;
+}
+
+/* ── 测试结果 ── */
+.test-result {
+    margin-top: 10px;
+    padding: 10px 14px;
+    border-radius: var(--radius);
+    font-size: .82rem;
+    line-height: 1.5;
+}
+.test-result.success { background: rgba(39,174,96,.08); color: #27ae60; border: 1px solid rgba(39,174,96,.15); }
+.test-result.error { background: rgba(231,76,60,.08); color: #e74c3c; border: 1px solid rgba(231,76,60,.15); }
+
+/* ── 响应式 ── */
+@media (max-width: 768px) {
+    .model-grid {
+        grid-template-columns: 1fr;
+    }
+    .filter-bar {
+        flex-wrap: wrap;
+    }
+}
+</style>
+</head>
+<body>
+
+<!-- 导航栏 -->
+<div id="nav-container"></div>
+
+<!-- 主内容 -->
+<div class="container">
+    <div class="page-header">
+        <h1>🔌 <span>API 配置</span></h1>
+    </div>
+
+    <!-- 标签页 -->
+    <div class="tab-bar">
+        <button class="tab-btn active" onclick="switchTab('sites')">🌐 站点管理</button>
+        <button class="tab-btn" onclick="switchTab('models')">🤖 模型池</button>
+    </div>
+
+    <!-- 站点管理 -->
+    <div id="tab-sites" class="tab-content active">
+        <div style="display:flex;justify-content:flex-end;margin-bottom:16px">
+            <button class="btn btn-primary" onclick="openSiteModal()">＋ 新增站点</button>
+        </div>
+        <div id="site-list"></div>
+    </div>
+
+    <!-- 模型池 -->
+    <div id="tab-models" class="tab-content">
+        <div class="filter-bar">
+            <input type="text" id="modelSearch" placeholder="搜索模型名称..." oninput="filterModels()">
+            <button class="btn btn-ghost" onclick="loadModels()">🔄 刷新</button>
+        </div>
+        <div id="model-grid" class="model-grid"></div>
+        <div id="model-empty" class="empty-state" style="display:none">
+            <div class="icon">🤖</div>
+            <h3>暂无模型数据</h3>
+            <p>请先添加 API 站点，然后点击"测试连接"获取模型列表</p>
+        </div>
+    </div>
+</div>
+
+<!-- 站点编辑模态框 -->
+<div id="site-modal" class="modal-overlay">
+    <div class="modal">
+        <h2 id="site-modal-title">🌐 新增 API 站点</h2>
+        <div class="form-group" style="margin-bottom:14px">
+            <label style="display:block;font-size:.82rem;color:var(--muted);margin-bottom:4px;font-weight:500">站点名称</label>
+            <input type="text" id="site-name" placeholder="如：OpenRouter" style="width:100%">
+        </div>
+        <div class="form-group" style="margin-bottom:14px">
+            <label style="display:block;font-size:.82rem;color:var(--muted);margin-bottom:4px;font-weight:500">Base URL</label>
+            <input type="text" id="site-url" placeholder="https://api.example.com/v1" style="width:100%">
+        </div>
+        <div class="form-group" style="margin-bottom:14px">
+            <label style="display:block;font-size:.82rem;color:var(--muted);margin-bottom:4px;font-weight:500">API Key</label>
+            <input type="password" id="site-key" placeholder="输入 API Key" style="width:100%">
+        </div>
+        <div class="form-group" style="margin-bottom:14px">
+            <label style="display:block;font-size:.82rem;color:var(--muted);margin-bottom:4px;font-weight:500">备注</label>
+            <input type="text" id="site-note" placeholder="可选备注" style="width:100%">
+        </div>
+        <div id="site-test-result"></div>
+        <div class="modal-actions">
+            <button class="btn btn-ghost" onclick="closeSiteModal()">取消</button>
+            <button class="btn btn-ghost" onclick="testSiteConnection()">🔍 测试连接</button>
+            <button class="btn btn-primary" onclick="saveSite()">保存</button>
+        </div>
+    </div>
+</div>
+
+<script src="/common.js"></script>
+<script>
+// ── 状态 ──
+const STORAGE_KEY = 'cangyv-api-sites';
+let sites = [];
+let editingSiteId = null;
+let allModels = [];
+
+// ── 初始化 ──
+document.addEventListener('DOMContentLoaded', () => {
+    const globalStyle = document.getElementById('global-css');
+    if (globalStyle && typeof GLOBAL_CSS !== 'undefined') {
+        globalStyle.textContent = GLOBAL_CSS;
+    }
+    initTheme();
+    $('#nav-container').innerHTML = renderNav('apiconfig');
+    loadSites();
+});
+
+// ── 标签页切换 ──
+function switchTab(tab) {
+    $$('.tab-btn').forEach(b => b.classList.toggle('active', b.textContent.includes(tab === 'sites' ? '站点' : '模型')));
+    $$('.tab-content').forEach(c => c.classList.remove('active'));
+    $(`#tab-${tab}`).classList.add('active');
+    if (tab === 'models') loadModels();
+}
+
+// ── 站点管理 ──
+function loadSites() {
+    try {
+        const raw = localStorage.getItem(STORAGE_KEY);
+        sites = raw ? JSON.parse(raw) : [];
+    } catch (e) {
+        sites = [];
+    }
+    renderSites();
+}
+
+function saveSitesToStorage() {
+    localStorage.setItem(STORAGE_KEY, JSON.stringify(sites));
+}
+
+function renderSites() {
+    const container = $('#site-list');
+    if (!sites.length) {
+        container.innerHTML = `<div class="empty-state">
+            <div class="icon">🌐</div>
+            <h3>暂无 API 站点</h3>
+            <p>点击"新增站点"添加你的第一个 API 接入</p>
+        </div>`;
+        return;
+    }
+    container.innerHTML = sites.map(s => {
+        const statusClass = s.status === 'online' ? 'online' : (s.status === 'offline' ? 'offline' : 'unknown');
+        const keyMasked = s.apiKey ? s.apiKey.substring(0, 6) + '****' + s.apiKey.slice(-4) : '未设置';
+        return `<div class="site-card">
+            <div class="site-card-header">
+                <div class="site-name">
+                    <span class="site-status-dot ${statusClass}"></span>
+                    ${escapeHtml(s.name)}
+                </div>
+                <div class="site-actions">
+                    <button class="site-action-btn" onclick="testSiteStatus('${s.id}')" title="测试连接">🔍</button>
+                    <button class="site-action-btn" onclick="editSite('${s.id}')" title="编辑">✏️</button>
+                    <button class="site-action-btn danger" onclick="deleteSite('${s.id}')" title="删除">🗑️</button>
+                </div>
+            </div>
+            <div class="site-info">
+                <div class="info-row"><span class="info-label">URL:</span><span class="info-value">${escapeHtml(s.baseUrl)}</span></div>
+                <div class="info-row"><span class="info-label">Key:</span><span class="api-key-masked">${escapeHtml(keyMasked)}</span></div>
+                ${s.note ? `<div class="info-row"><span class="info-label">备注:</span><span class="info-value">${escapeHtml(s.note)}</span></div>` : ''}
+            </div>
+            <div id="test-result-${s.id}"></div>
+        </div>`;
+    }).join('');
+}
+
+function openSiteModal(site) {
+    editingSiteId = site ? site.id : null;
+    $('#site-modal-title').textContent = site ? '✏️ 编辑 API 站点' : '🌐 新增 API 站点';
+    $('#site-name').value = site ? site.name : '';
+    $('#site-url').value = site ? site.baseUrl : '';
+    $('#site-key').value = site ? site.apiKey : '';
+    $('#site-note').value = site ? site.note || '' : '';
+    $('#site-test-result').innerHTML = '';
+    $('#site-modal').classList.add('active');
+}
+
+function closeSiteModal() {
+    $('#site-modal').classList.remove('active');
+    editingSiteId = null;
+}
+
+function editSite(id) {
+    const site = sites.find(s => s.id === id);
+    if (site) openSiteModal(site);
+}
+
+function saveSite() {
+    const name = $('#site-name').value.trim();
+    const baseUrl = $('#site-url').value.trim();
+    const apiKey = $('#site-key').value.trim();
+    const note = $('#site-note').value.trim();
+
+    if (!name) { showToast('请输入站点名称', 'error'); return; }
+    if (!baseUrl) { showToast('请输入 Base URL', 'error'); return; }
+
+    if (editingSiteId) {
+        const idx = sites.findIndex(s => s.id === editingSiteId);
+        if (idx !== -1) {
+            sites[idx] = { ...sites[idx], name, baseUrl, apiKey, note };
+        }
+    } else {
+        sites.push({
+            id: 'site_' + Date.now(),
+            name,
+            baseUrl,
+            apiKey,
+            note,
+            status: 'unknown',
+        });
+    }
+
+    saveSitesToStorage();
+    renderSites();
+    closeSiteModal();
+    showToast(editingSiteId ? '站点已更新' : '站点已添加', 'success');
+}
+
+function deleteSite(id) {
+    if (!confirm('确定要删除这个 API 站点吗？')) return;
+    sites = sites.filter(s => s.id !== id);
+    saveSitesToStorage();
+    renderSites();
+    showToast('站点已删除', 'success');
+}
+
+// ── 连接测试 ──
+async function testSiteConnection() {
+    const baseUrl = $('#site-url').value.trim();
+    const apiKey = $('#site-key').value.trim();
+    if (!baseUrl) { showToast('请先填写 Base URL', 'error'); return; }
+
+    const resultEl = $('#site-test-result');
+    resultEl.innerHTML = '<div style="color:var(--muted);font-size:.82rem">⏳ 正在测试连接...</div>';
+
+    try {
+        const headers = { 'Content-Type': 'application/json' };
+        if (apiKey) headers['Authorization'] = 'Bearer ' + apiKey;
+
+        const url = baseUrl.replace(/\/+$/, '') + '/models';
+        const resp = await fetch(url, { headers, signal: AbortSignal.timeout(10000) });
+
+        if (resp.ok) {
+            const data = await resp.json();
+            const modelCount = data.data ? data.data.length : (Array.isArray(data) ? data.length : 0);
+            resultEl.innerHTML = `<div class="test-result success">✅ 连接成功！发现 ${modelCount} 个模型</div>`;
+        } else {
+            resultEl.innerHTML = `<div class="test-result error">❌ 连接失败：HTTP ${resp.status}</div>`;
+        }
+    } catch (e) {
+        resultEl.innerHTML = `<div class="test-result error">❌ 连接失败：${escapeHtml(e.message)}</div>`;
+    }
+}
+
+async function testSiteStatus(id) {
+    const site = sites.find(s => s.id === id);
+    if (!site) return;
+
+    const resultEl = $(`#test-result-${id}`);
+    resultEl.innerHTML = '<div style="color:var(--muted);font-size:.82rem;padding:6px 0">⏳ 测试中...</div>';
+
+    try {
+        const headers = { 'Content-Type': 'application/json' };
+        if (site.apiKey) headers['Authorization'] = 'Bearer ' + site.apiKey;
+
+        const url = site.baseUrl.replace(/\/+$/, '') + '/models';
+        const resp = await fetch(url, { headers, signal: AbortSignal.timeout(10000) });
+
+        if (resp.ok) {
+            site.status = 'online';
+            const data = await resp.json();
+            const modelCount = data.data ? data.data.length : (Array.isArray(data) ? data.length : 0);
+            resultEl.innerHTML = `<div class="test-result success">✅ 在线 — ${modelCount} 个模型可用</div>`;
+        } else {
+            site.status = 'offline';
+            resultEl.innerHTML = `<div class="test-result error">❌ 离线 — HTTP ${resp.status}</div>`;
+        }
+    } catch (e) {
+        site.status = 'offline';
+        resultEl.innerHTML = `<div class="test-result error">❌ 离线 — ${escapeHtml(e.message)}</div>`;
+    }
+    saveSitesToStorage();
+    renderSites();
+}
+
+// ── 模型池 ──
+async function loadModels() {
+    const grid = $('#model-grid');
+    const empty = $('#model-empty');
+
+    // 先尝试从网关获取
+    grid.innerHTML = '<div style="text-align:center;padding:40px;color:var(--muted)"><div class="spinner" style="margin:0 auto 12px"></div>加载模型列表...</div>';
+
+    try {
+        const data = await apiGet('/api/v1/models');
+        allModels = data.data || (Array.isArray(data) ? data : []);
+    } catch (e) {
+        // 网关不支持，尝试从已配置的站点获取
+        allModels = [];
+        for (const site of sites) {
+            if (site.status === 'online' && site.apiKey) {
+                try {
+                    const headers = { 'Content-Type': 'application/json' };
+                    headers['Authorization'] = 'Bearer ' + site.apiKey;
+                    const url = site.baseUrl.replace(/\/+$/, '') + '/models';
+                    const resp = await fetch(url, { headers, signal: AbortSignal.timeout(10000) });
+                    if (resp.ok) {
+                        const siteData = await resp.json();
+                        const models = siteData.data || (Array.isArray(siteData) ? siteData : []);
+                        models.forEach(m => { m._source = site.name; allModels.push(m); });
+                    }
+                } catch (err) { /* skip */ }
+            }
+        }
+    }
+
+    renderModels();
+}
+
+function renderModels() {
+    const grid = $('#model-grid');
+    const empty = $('#model-empty');
+    const query = ($('#modelSearch').value || '').trim().toLowerCase();
+
+    let filtered = allModels;
+    if (query) {
+        filtered = allModels.filter(m => {
+            const id = (m.id || m.name || '').toLowerCase();
+            const owned_by = (m.owned_by || '').toLowerCase();
+            return id.includes(query) || owned_by.includes(query);
+        });
+    }
+
+    if (!filtered.length) {
+        grid.innerHTML = '';
+        empty.style.display = '';
+        return;
+    }
+
+    empty.style.display = 'none';
+    grid.innerHTML = filtered.map(m => {
+        const name = m.id || m.name || '未知';
+        const provider = m.owned_by || m._source || '未知';
+        const available = m.available !== false;
+        const ctxLen = m.context_length || m.max_context_length || null;
+        return `<div class="model-card">
+            <div class="model-card-header">
+                <div class="model-name">${escapeHtml(name)}</div>
+                <span class="model-available ${available ? 'yes' : 'no'}">${available ? '可用' : '不可用'}</span>
+            </div>
+            <div class="model-meta">
+                <span>📦 ${escapeHtml(provider)}</span>
+                ${ctxLen ? `<span>📏 ${ctxLen.toLocaleString()} ctx</span>` : ''}
+            </div>
+        </div>`;
+    }).join('');
+}
+
+function filterModels() {
+    renderModels();
+}
+
+// ── 模态框关闭 ──
+document.addEventListener('click', (e) => {
+    if (e.target.classList.contains('modal-overlay') && e.target.classList.contains('active')) {
+        e.target.classList.remove('active');
+    }
+});
+
+document.addEventListener('keydown', (e) => {
+    if (e.key === 'Escape') {
+        $$('.modal-overlay.active').forEach(m => m.classList.remove('active'));
+    }
+});
+</script>
+</body>
+</html>
