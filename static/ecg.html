@@ -1,0 +1,833 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>心电图 - 苍聿居</title>
+<link rel="manifest" href="/manifest.json">
+<style>
+/* ── 全局样式 ── */
+*{margin:0;padding:0;box-sizing:border-box}
+:root{--bg:#fdf6f0;--card:rgba(255,255,255,0.75);--cardSolid:#fff;--text:#4a3728;--muted:#8b7355;--accent:#c08b72;--accentLight:rgba(192,139,114,0.12);--border:rgba(160,128,96,0.15);--shadow:rgba(160,128,96,0.08);--inputBg:rgba(255,255,255,0.6);--radius:12px;--radius-lg:16px;--nav-h:56px;--ai-color:#5b8fb9;--ai-color-light:rgba(91,143,185,0.12)}
+html{font-size:16px;-webkit-text-size-adjust:100%}
+body{font-family:-apple-system,BlinkMacSystemFont,'Segoe UI','PingFang SC','Hiragino Sans GB','Microsoft YaHei',sans-serif;background:var(--bg);color:var(--text);min-height:100vh;padding-top:var(--nav-h);transition:background .3s,color .3s}
+a{color:var(--accent);text-decoration:none}
+button{cursor:pointer;font-family:inherit;border:none;background:none;color:inherit}
+input,textarea,select{font-family:inherit;font-size:inherit;color:var(--text);background:var(--inputBg);border:1px solid var(--border);border-radius:var(--radius);padding:10px 14px;outline:none;transition:border .2s}
+input:focus,textarea:focus{border-color:var(--accent)}
+textarea{resize:vertical;min-height:60px}
+
+/* 导航栏 */
+.main-nav{position:fixed;top:0;left:0;right:0;height:var(--nav-h);background:var(--card);backdrop-filter:blur(20px);-webkit-backdrop-filter:blur(20px);border-bottom:1px solid var(--border);display:flex;align-items:center;padding:0 16px;z-index:1000;gap:8px}
+.nav-brand{font-size:1.15rem;font-weight:700;color:var(--accent);cursor:pointer;white-space:nowrap}
+.nav-links{display:flex;gap:2px;flex:1;justify-content:center;overflow-x:auto;scrollbar-width:none}
+.nav-links::-webkit-scrollbar{display:none}
+.nav-link{display:flex;align-items:center;gap:4px;padding:6px 12px;border-radius:var(--radius);font-size:.875rem;color:var(--muted);transition:all .2s;white-space:nowrap}
+.nav-link:hover{background:var(--accentLight);color:var(--accent)}
+.nav-link.active{background:var(--accentLight);color:var(--accent);font-weight:600}
+.nav-theme{font-size:1.1rem;padding:6px 8px;border-radius:var(--radius);transition:background .2s}
+.nav-theme:hover{background:var(--accentLight)}
+
+/* 卡片 */
+.card{background:var(--card);backdrop-filter:blur(12px);-webkit-backdrop-filter:blur(12px);border:1px solid var(--border);border-radius:var(--radius-lg);padding:16px;transition:box-shadow .2s,transform .15s}
+.card:hover{box-shadow:0 4px 20px var(--shadow)}
+
+/* 按钮 */
+.btn{display:inline-flex;align-items:center;justify-content:center;gap:6px;padding:8px 18px;border-radius:var(--radius);font-size:.875rem;font-weight:500;transition:all .2s;cursor:pointer}
+.btn-primary{background:var(--accent);color:#fff}
+.btn-primary:hover{opacity:.9;transform:translateY(-1px)}
+.btn-primary:disabled{opacity:.5;cursor:not-allowed;transform:none}
+.btn-ghost{background:var(--accentLight);color:var(--accent)}
+.btn-ghost:hover{background:var(--accent);color:#fff}
+.btn-ai{background:var(--ai-color-light);color:var(--ai-color)}
+.btn-ai:hover{background:var(--ai-color);color:#fff}
+.btn-sm{padding:5px 12px;font-size:.8rem}
+
+/* 布局 */
+.container{max-width:900px;margin:0 auto;padding:16px}
+.flex-between{display:flex;justify-content:space-between;align-items:center}
+.flex-center{display:flex;align-items:center;justify-content:center}
+.flex-col{display:flex;flex-direction:column}
+.gap-8{gap:8px}.gap-12{gap:12px}.gap-16{gap:16px}
+
+/* Toast */
+.toast{position:fixed;bottom:80px;left:50%;transform:translateX(-50%) translateY(20px);padding:10px 24px;border-radius:var(--radius);font-size:.875rem;z-index:9999;opacity:0;transition:all .3s;pointer-events:none}
+.toast.show{opacity:1;transform:translateX(-50%) translateY(0)}
+.toast-info{background:var(--accent);color:#fff}
+.toast-error{background:#e74c3c;color:#fff}
+.toast-success{background:#27ae60;color:#fff}
+
+/* ── 页面专属样式 ── */
+.page-header{margin-bottom:20px}
+.page-header h1{font-size:1.5rem;font-weight:700;display:flex;align-items:center;gap:8px}
+.page-header h1 .icon{font-size:1.3rem}
+.page-header p{color:var(--muted);font-size:.875rem;margin-top:4px}
+
+/* 提交区域 */
+.submit-section{margin-bottom:20px}
+.submit-section .card{padding:20px}
+.submit-header{display:flex;align-items:center;justify-content:space-between;margin-bottom:16px}
+.submit-header h2{font-size:1.1rem;font-weight:600}
+.today-date{color:var(--muted);font-size:.85rem}
+
+.score-area{display:flex;align-items:center;gap:16px;margin-bottom:16px}
+.score-display{min-width:64px;text-align:center}
+.score-number{font-size:2.5rem;font-weight:800;color:var(--accent);line-height:1}
+.score-emoji{font-size:1.8rem;margin-top:4px;transition:transform .2s}
+.slider-wrap{flex:1;display:flex;flex-direction:column;gap:6px}
+.slider-labels{display:flex;justify-content:space-between;font-size:.7rem;color:var(--muted)}
+input[type=range]{-webkit-appearance:none;appearance:none;width:100%;height:8px;border-radius:4px;background:linear-gradient(90deg,#e74c3c,#e67e22,#f1c40f,#2ecc71,#27ae60);outline:none;border:none;padding:0;cursor:pointer}
+input[type=range]::-webkit-slider-thumb{-webkit-appearance:none;appearance:none;width:24px;height:24px;border-radius:50%;background:#fff;border:3px solid var(--accent);box-shadow:0 2px 8px var(--shadow);cursor:pointer;transition:transform .15s}
+input[type=range]::-webkit-slider-thumb:hover{transform:scale(1.15)}
+input[type=range]::-moz-range-thumb{width:24px;height:24px;border-radius:50%;background:#fff;border:3px solid var(--accent);box-shadow:0 2px 8px var(--shadow);cursor:pointer}
+
+.input-row{display:grid;grid-template-columns:1fr 1fr;gap:12px;margin-bottom:12px}
+.input-full{margin-bottom:16px}
+.input-full textarea{width:100%;min-height:50px;padding:10px 14px}
+.input-row input{width:100%}
+.input-label{font-size:.8rem;color:var(--muted);margin-bottom:4px;display:block}
+
+.submit-actions{display:flex;gap:10px;flex-wrap:wrap}
+.submit-actions .btn{flex:1;min-width:120px}
+
+/* 图表区域 */
+.chart-section{margin-bottom:20px}
+.chart-section .card{padding:20px}
+.chart-toolbar{display:flex;align-items:center;justify-content:space-between;margin-bottom:14px;flex-wrap:wrap;gap:8px}
+.chart-toolbar h2{font-size:1.1rem;font-weight:600}
+.range-tabs{display:flex;gap:4px;background:var(--accentLight);border-radius:var(--radius);padding:3px}
+.range-tab{padding:5px 14px;border-radius:8px;font-size:.8rem;color:var(--muted);transition:all .2s;cursor:pointer}
+.range-tab.active{background:var(--cardSolid);color:var(--accent);font-weight:600;box-shadow:0 1px 4px var(--shadow)}
+.range-tab:hover:not(.active){color:var(--accent)}
+
+.chart-legend{display:flex;gap:16px;margin-bottom:10px;font-size:.8rem;color:var(--muted)}
+.legend-item{display:flex;align-items:center;gap:5px}
+.legend-dot{width:10px;height:10px;border-radius:50%}
+.legend-dot.user{background:var(--accent)}
+.legend-dot.ai{background:var(--ai-color)}
+
+.canvas-wrap{position:relative;width:100%;aspect-ratio:2.2/1;min-height:220px;border-radius:var(--radius);overflow:hidden;background:var(--cardSolid)}
+.canvas-wrap canvas{width:100%;height:100%;display:block}
+
+.chart-tooltip{position:absolute;pointer-events:none;background:var(--cardSolid);border:1px solid var(--border);border-radius:var(--radius);padding:10px 14px;font-size:.8rem;box-shadow:0 4px 16px var(--shadow);z-index:10;opacity:0;transition:opacity .15s;min-width:140px}
+.chart-tooltip.visible{opacity:1}
+.tooltip-date{font-weight:600;margin-bottom:6px;color:var(--text)}
+.tooltip-row{display:flex;align-items:center;gap:6px;margin-top:3px}
+.tooltip-dot{width:8px;height:8px;border-radius:50%;flex-shrink:0}
+.tooltip-dot.user{background:var(--accent)}
+.tooltip-dot.ai{background:var(--ai-color)}
+.tooltip-label{color:var(--muted)}
+.tooltip-val{font-weight:600;margin-left:auto}
+
+/* 历史表格 */
+.history-section .card{padding:20px}
+.history-header{display:flex;align-items:center;justify-content:space-between;margin-bottom:14px}
+.history-header h2{font-size:1.1rem;font-weight:600}
+.history-count{font-size:.8rem;color:var(--muted)}
+
+.history-table-wrap{overflow-x:auto}
+.history-table{width:100%;border-collapse:collapse;font-size:.85rem}
+.history-table th{text-align:left;padding:10px 12px;color:var(--muted);font-weight:500;border-bottom:2px solid var(--border);white-space:nowrap}
+.history-table td{padding:10px 12px;border-bottom:1px solid var(--border);vertical-align:top}
+.history-table tr:last-child td{border-bottom:none}
+.history-table tr:hover td{background:var(--accentLight)}
+.score-badge{display:inline-flex;align-items:center;justify-content:center;width:28px;height:28px;border-radius:50%;font-size:.8rem;font-weight:700;color:#fff}
+.score-badge.user{background:var(--accent)}
+.score-badge.ai{background:var(--ai-color)}
+.mood-tag{display:inline-block;padding:2px 8px;border-radius:12px;font-size:.75rem;background:var(--accentLight);color:var(--accent);margin-left:4px}
+.mood-tag.ai{background:var(--ai-color-light);color:var(--ai-color)}
+.comment-cell{max-width:200px;overflow:hidden;text-overflow:ellipsis;white-space:nowrap;color:var(--muted);font-size:.8rem}
+.empty-state{text-align:center;padding:40px 20px;color:var(--muted)}
+.empty-state .icon{font-size:2.5rem;margin-bottom:8px}
+
+/* 加载动画 */
+.loading-shimmer{background:linear-gradient(90deg,var(--border) 25%,var(--accentLight) 50%,var(--border) 75%);background-size:200% 100%;animation:shimmer 1.5s infinite;border-radius:var(--radius)}
+@keyframes shimmer{0%{background-position:200% 0}100%{background-position:-200% 0}}
+
+/* 响应式 */
+@media(max-width:768px){
+    .nav-label{display:none}
+    .nav-link{padding:6px 8px;font-size:1rem}
+    .container{padding:12px}
+    .input-row{grid-template-columns:1fr}
+    .score-area{flex-direction:column;align-items:stretch}
+    .score-display{display:flex;align-items:center;gap:12px;min-width:auto}
+    .score-number{font-size:2rem}
+    .canvas-wrap{aspect-ratio:1.6/1}
+    .submit-actions{flex-direction:column}
+    .submit-actions .btn{min-width:auto}
+    .history-table{font-size:.78rem}
+    .history-table th,.history-table td{padding:8px 6px}
+}
+</style>
+</head>
+<body>
+
+<!-- 导航栏 -->
+<nav class="main-nav">
+    <div class="nav-brand" onclick="location.href='/'">苍聿居</div>
+    <div class="nav-links">
+        <a href="/" class="nav-link">🧠<span class="nav-label">记忆</span></a>
+        <a href="/chat" class="nav-link">💬<span class="nav-label">聊天</span></a>
+        <a href="/diary" class="nav-link">📖<span class="nav-label">日记</span></a>
+        <a href="/ecg" class="nav-link active">💓<span class="nav-label">心电图</span></a>
+        <a href="/panel" class="nav-link">⚙️<span class="nav-label">面板</span></a>
+    </div>
+    <button class="nav-theme" onclick="cycleTheme()" title="切换主题">🎨</button>
+</nav>
+
+<div class="container">
+
+    <!-- 页面标题 -->
+    <div class="page-header">
+        <h1><span class="icon">💓</span> 心电图</h1>
+        <p>记录每一天的情绪脉搏，看见内心的节奏</p>
+    </div>
+
+    <!-- 今日评分提交 -->
+    <div class="submit-section">
+        <div class="card">
+            <div class="submit-header">
+                <h2>📝 今日心情</h2>
+                <span class="today-date" id="todayDate"></span>
+            </div>
+
+            <div class="score-area">
+                <div class="score-display">
+                    <div class="score-number" id="scoreDisplay">5</div>
+                    <div class="score-emoji" id="scoreEmoji">😐</div>
+                </div>
+                <div class="slider-wrap">
+                    <input type="range" id="scoreSlider" min="1" max="10" value="5" step="1">
+                    <div class="slider-labels">
+                        <span>1 低谷</span><span>5 平静</span><span>10 巅峰</span>
+                    </div>
+                </div>
+            </div>
+
+            <div class="input-row">
+                <div>
+                    <label class="input-label">心情标签（可选）</label>
+                    <input type="text" id="moodInput" placeholder="如：开心、焦虑、平静…" maxlength="20">
+                </div>
+                <div>
+                    <label class="input-label">日期</label>
+                    <input type="text" id="dateInput" readonly>
+                </div>
+            </div>
+
+            <div class="input-full">
+                <label class="input-label">备注（可选）</label>
+                <textarea id="commentInput" placeholder="写下此刻的感受…" maxlength="500"></textarea>
+            </div>
+
+            <div class="submit-actions">
+                <button class="btn btn-primary" id="submitBtn" onclick="submitScore()">
+                    ✨ 提交评分
+                </button>
+                <button class="btn btn-ai" id="aiBtn" onclick="triggerAiScore()">
+                    🤖 AI评分
+                </button>
+            </div>
+        </div>
+    </div>
+
+    <!-- 图表区域 -->
+    <div class="chart-section">
+        <div class="card">
+            <div class="chart-toolbar">
+                <h2>📊 情绪曲线</h2>
+                <div class="range-tabs">
+                    <button class="range-tab" data-days="7" onclick="setRange(7)">7天</button>
+                    <button class="range-tab active" data-days="30" onclick="setRange(30)">30天</button>
+                    <button class="range-tab" data-days="90" onclick="setRange(90)">90天</button>
+                </div>
+            </div>
+            <div class="chart-legend">
+                <div class="legend-item"><div class="legend-dot user"></div>我的评分</div>
+                <div class="legend-item"><div class="legend-dot ai"></div>AI评分</div>
+            </div>
+            <div class="canvas-wrap" id="canvasWrap">
+                <canvas id="ecgChart"></canvas>
+                <div class="chart-tooltip" id="chartTooltip">
+                    <div class="tooltip-date" id="tooltipDate"></div>
+                    <div class="tooltip-row"><div class="tooltip-dot user"></div><span class="tooltip-label">我</span><span class="tooltip-val" id="tooltipUser"></span></div>
+                    <div class="tooltip-row"><div class="tooltip-dot ai"></div><span class="tooltip-label">AI</span><span class="tooltip-val" id="tooltipAi"></span></div>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <!-- 历史记录 -->
+    <div class="history-section">
+        <div class="card">
+            <div class="history-header">
+                <h2>📋 历史记录</h2>
+                <span class="history-count" id="historyCount"></span>
+            </div>
+            <div class="history-table-wrap">
+                <table class="history-table" id="historyTable">
+                    <thead>
+                        <tr>
+                            <th>日期</th>
+                            <th>我的评分</th>
+                            <th>AI评分</th>
+                            <th>心情</th>
+                            <th>备注</th>
+                        </tr>
+                    </thead>
+                    <tbody id="historyBody">
+                    </tbody>
+                </table>
+                <div class="empty-state" id="emptyState" style="display:none">
+                    <div class="icon">📭</div>
+                    <p>暂无记录，开始记录你的心情吧</p>
+                </div>
+            </div>
+        </div>
+    </div>
+
+</div>
+
+<script src="/common.js"></script>
+<script>
+(function() {
+    'use strict';
+
+    // ── 状态 ──
+    let entries = [];
+    let currentDays = 30;
+    let animProgress = 0;
+    let animId = null;
+    let hoveredIndex = -1;
+
+    // ── Emoji 映射 ──
+    const SCORE_EMOJIS = {
+        1: '😢', 2: '😞', 3: '😟', 4: '😕', 5: '😐',
+        6: '🙂', 7: '😊', 8: '😄', 9: '😁', 10: '🥳'
+    };
+
+    // ── 初始化 ──
+    document.addEventListener('DOMContentLoaded', () => {
+        initTheme();
+        initSlider();
+        initTodayDate();
+        initCanvas();
+        loadData();
+        window.addEventListener('resize', debounce(drawChart, 150));
+    });
+
+    function initSlider() {
+        const slider = $('#scoreSlider');
+        const display = $('#scoreDisplay');
+        const emoji = $('#scoreEmoji');
+
+        function update() {
+            const v = parseInt(slider.value);
+            display.textContent = v;
+            emoji.textContent = SCORE_EMOJIS[v] || '😐';
+            emoji.style.transform = 'scale(1.2)';
+            setTimeout(() => emoji.style.transform = 'scale(1)', 150);
+        }
+
+        slider.addEventListener('input', update);
+        update();
+    }
+
+    function initTodayDate() {
+        const now = new Date();
+        const dateStr = now.toLocaleDateString('zh-CN', { year: 'numeric', month: 'long', day: 'numeric', weekday: 'long' });
+        const todayEl = $('#todayDate');
+        if (todayEl) todayEl.textContent = dateStr;
+        const dateInput = $('#dateInput');
+        if (dateInput) dateInput.value = now.toLocaleDateString('zh-CN');
+    }
+
+    // ── Canvas 初始化 ──
+    let canvas, ctx, dpr;
+
+    function initCanvas() {
+        canvas = $('#ecgChart');
+        ctx = canvas.getContext('2d');
+        dpr = window.devicePixelRatio || 1;
+        resizeCanvas();
+
+        canvas.addEventListener('mousemove', onCanvasMouseMove);
+        canvas.addEventListener('mouseleave', onCanvasMouseLeave);
+        canvas.addEventListener('touchstart', onCanvasTouch, { passive: true });
+        canvas.addEventListener('touchmove', onCanvasTouch, { passive: true });
+        canvas.addEventListener('touchend', onCanvasTouchEnd);
+    }
+
+    function resizeCanvas() {
+        const wrap = $('#canvasWrap');
+        if (!wrap || !canvas) return;
+        const rect = wrap.getBoundingClientRect();
+        canvas.width = rect.width * dpr;
+        canvas.height = rect.height * dpr;
+        canvas.style.width = rect.width + 'px';
+        canvas.style.height = rect.height + 'px';
+        ctx.setTransform(dpr, 0, 0, dpr, 0, 0);
+    }
+
+    // ── 数据加载 ──
+    async function loadData() {
+        try {
+            const data = await apiGet(`/api/v1/ecg?days=${currentDays}`);
+            entries = (data.entries || []).sort((a, b) => new Date(a.created_at) - new Date(b.created_at));
+        } catch (e) {
+            console.error('加载ECG数据失败:', e);
+            entries = [];
+        }
+        renderHistory();
+        animateChart();
+    }
+
+    // ── 时间范围 ──
+    window.setRange = function(days) {
+        currentDays = days;
+        $$('.range-tab').forEach(t => t.classList.toggle('active', parseInt(t.dataset.days) === days));
+        loadData();
+    };
+
+    // ── 提交评分 ──
+    window.submitScore = async function() {
+        const btn = $('#submitBtn');
+        const score = parseInt($('#scoreSlider').value);
+        const mood = $('#moodInput').value.trim();
+        const comment = $('#commentInput').value.trim();
+
+        btn.disabled = true;
+        btn.textContent = '提交中…';
+
+        try {
+            const body = { user_score: score };
+            if (mood) body.user_mood = mood;
+            if (comment) body.user_comment = comment;
+            await apiPost('/api/v1/ecg', body);
+            showToast('评分已提交 ✨', 'success');
+            $('#moodInput').value = '';
+            $('#commentInput').value = '';
+            $('#scoreSlider').value = 5;
+            $('#scoreDisplay').textContent = '5';
+            $('#scoreEmoji').textContent = SCORE_EMOJIS[5];
+            loadData();
+        } catch (e) {
+            showToast('提交失败：' + e.message, 'error');
+        } finally {
+            btn.disabled = false;
+            btn.textContent = '✨ 提交评分';
+        }
+    };
+
+    // ── AI评分 ──
+    window.triggerAiScore = async function() {
+        const btn = $('#aiBtn');
+        btn.disabled = true;
+        btn.textContent = '🤖 分析中…';
+
+        try {
+            await apiPost('/api/v1/ecg/auto-ai', {});
+            showToast('AI评分已生成 🤖', 'success');
+            loadData();
+        } catch (e) {
+            showToast('AI评分失败：' + e.message, 'error');
+        } finally {
+            btn.disabled = false;
+            btn.textContent = '🤖 AI评分';
+        }
+    };
+
+    // ── 图表动画 ──
+    function animateChart() {
+        if (animId) cancelAnimationFrame(animId);
+        animProgress = 0;
+        resizeCanvas();
+
+        function step() {
+            animProgress += 0.035;
+            if (animProgress > 1) animProgress = 1;
+            drawChart();
+            if (animProgress < 1) {
+                animId = requestAnimationFrame(step);
+            }
+        }
+        animId = requestAnimationFrame(step);
+    }
+
+    // ── 绘制图表 ──
+    function drawChart() {
+        if (!ctx || !canvas) return;
+        const W = canvas.width / dpr;
+        const H = canvas.height / dpr;
+
+        ctx.clearRect(0, 0, W, H);
+
+        const pad = { top: 20, right: 24, bottom: 36, left: 40 };
+        const chartW = W - pad.left - pad.right;
+        const chartH = H - pad.top - pad.bottom;
+
+        // 获取主题色
+        const styles = getComputedStyle(document.documentElement);
+        const accentColor = styles.getPropertyValue('--accent').trim() || '#c08b72';
+        const aiColor = styles.getPropertyValue('--ai-color').trim() || '#5b8fb9';
+        const mutedColor = styles.getPropertyValue('--muted').trim() || '#8b7355';
+        const borderColor = styles.getPropertyValue('--border').trim() || 'rgba(160,128,96,0.15)';
+        const cardSolid = styles.getPropertyValue('--cardSolid').trim() || '#fff';
+        const textColor = styles.getPropertyValue('--text').trim() || '#4a3728';
+
+        // 绘制网格
+        drawGrid(pad, chartW, chartH, W, H, borderColor, mutedColor);
+
+        if (entries.length === 0) {
+            ctx.fillStyle = mutedColor;
+            ctx.font = '14px sans-serif';
+            ctx.textAlign = 'center';
+            ctx.fillText('暂无数据', W / 2, H / 2);
+            return;
+        }
+
+        // 准备数据点
+        const userPoints = [];
+        const aiPoints = [];
+        const n = entries.length;
+
+        entries.forEach((e, i) => {
+            const x = pad.left + (n > 1 ? (i / (n - 1)) * chartW : chartW / 2);
+            const yUser = pad.top + chartH - ((e.user_score - 1) / 9) * chartH;
+            const yAi = e.ai_score != null ? pad.top + chartH - ((e.ai_score - 1) / 9) * chartH : null;
+            userPoints.push({ x, y: yUser, entry: e });
+            if (yAi !== null) aiPoints.push({ x, y: yAi, entry: e });
+        });
+
+        // 应用动画进度
+        const animLen = Math.max(1, Math.ceil(userPoints.length * animProgress));
+        const visibleUser = userPoints.slice(0, animLen);
+        const visibleAi = aiPoints.filter(p => userPoints.indexOf(p.entry) >= 0 && userPoints.indexOf(p.entry) < animLen);
+
+        // 绘制渐变填充和线条
+        if (visibleUser.length > 1) {
+            drawLineWithFill(visibleUser, accentColor, pad, chartH, 0.08);
+        }
+        if (visibleAi.length > 1) {
+            drawLineWithFill(visibleAi, aiColor, pad, chartH, 0.06);
+        }
+
+        // 绘制数据点
+        if (animProgress >= 1) {
+            drawDataPoints(visibleUser, accentColor, cardSolid);
+            drawDataPoints(visibleAi, aiColor, cardSolid);
+        }
+
+        // 绘制 X 轴日期标签
+        drawXLabels(userPoints, pad, chartW, H, mutedColor);
+    }
+
+    function drawGrid(pad, chartW, chartH, W, H, borderColor, mutedColor) {
+        ctx.strokeStyle = borderColor;
+        ctx.lineWidth = 1;
+
+        // 水平网格线 + Y轴标签
+        for (let i = 0; i <= 9; i++) {
+            const y = pad.top + (i / 9) * chartH;
+            ctx.beginPath();
+            ctx.setLineDash([3, 3]);
+            ctx.moveTo(pad.left, y);
+            ctx.lineTo(pad.left + chartW, y);
+            ctx.stroke();
+            ctx.setLineDash([]);
+
+            const val = 10 - i;
+            ctx.fillStyle = mutedColor;
+            ctx.font = '11px sans-serif';
+            ctx.textAlign = 'right';
+            ctx.textBaseline = 'middle';
+            ctx.fillText(val, pad.left - 8, y);
+        }
+
+        // 边框
+        ctx.strokeStyle = borderColor;
+        ctx.lineWidth = 1;
+        ctx.beginPath();
+        ctx.moveTo(pad.left, pad.top);
+        ctx.lineTo(pad.left, pad.top + chartH);
+        ctx.lineTo(pad.left + chartW, pad.top + chartH);
+        ctx.stroke();
+    }
+
+    function drawLineWithFill(points, color, pad, chartH, fillAlpha) {
+        if (points.length < 2) return;
+
+        // 贝塞尔曲线
+        const curvePoints = getCurvePoints(points);
+
+        // 渐变填充
+        ctx.beginPath();
+        ctx.moveTo(points[0].x, points[0].y);
+        drawBezierPath(curvePoints);
+        ctx.lineTo(points[points.length - 1].x, pad.top + chartH);
+        ctx.lineTo(points[0].x, pad.top + chartH);
+        ctx.closePath();
+
+        const grad = ctx.createLinearGradient(0, pad.top, 0, pad.top + chartH);
+        // 解析颜色生成 rgba
+        const rgb = parseColor(color);
+        grad.addColorStop(0, `rgba(${rgb.r},${rgb.g},${rgb.b},${fillAlpha})`);
+        grad.addColorStop(1, `rgba(${rgb.r},${rgb.g},${rgb.b},0)`);
+        ctx.fillStyle = grad;
+        ctx.fill();
+
+        // 线条
+        ctx.beginPath();
+        ctx.moveTo(points[0].x, points[0].y);
+        drawBezierPath(curvePoints);
+        ctx.strokeStyle = color;
+        ctx.lineWidth = 2.5;
+        ctx.lineJoin = 'round';
+        ctx.lineCap = 'round';
+        ctx.stroke();
+    }
+
+    function drawBezierPath(curvePoints) {
+        for (let i = 0; i < curvePoints.length - 1; i++) {
+            const cp1 = curvePoints[i].cpNext;
+            const cp2 = curvePoints[i + 1].cpPrev;
+            const next = curvePoints[i + 1];
+            ctx.bezierCurveTo(cp1.x, cp1.y, cp2.x, cp2.y, next.x, next.y);
+        }
+    }
+
+    function getCurvePoints(points) {
+        const tension = 0.3;
+        const result = points.map((p, i) => ({
+            x: p.x, y: p.y,
+            cpPrev: { x: p.x, y: p.y },
+            cpNext: { x: p.x, y: p.y }
+        }));
+
+        for (let i = 0; i < points.length; i++) {
+            const prev = points[i - 1] || points[i];
+            const curr = points[i];
+            const next = points[i + 1] || points[i];
+
+            const dx = next.x - prev.x;
+            const dy = next.y - prev.y;
+
+            result[i].cpNext = {
+                x: curr.x + dx * tension,
+                y: curr.y + dy * tension
+            };
+            result[i].cpPrev = {
+                x: curr.x - dx * tension,
+                y: curr.y - dy * tension
+            };
+        }
+
+        return result;
+    }
+
+    function drawDataPoints(points, color, bgColor) {
+        points.forEach((p, i) => {
+            const isHovered = (i === hoveredIndex);
+            const r = isHovered ? 6 : 4;
+
+            // 外圈光晕
+            if (isHovered) {
+                ctx.beginPath();
+                ctx.arc(p.x, p.y, 12, 0, Math.PI * 2);
+                const rgb = parseColor(color);
+                ctx.fillStyle = `rgba(${rgb.r},${rgb.g},${rgb.b},0.15)`;
+                ctx.fill();
+            }
+
+            // 点
+            ctx.beginPath();
+            ctx.arc(p.x, p.y, r, 0, Math.PI * 2);
+            ctx.fillStyle = color;
+            ctx.fill();
+            ctx.strokeStyle = bgColor;
+            ctx.lineWidth = 2;
+            ctx.stroke();
+        });
+    }
+
+    function drawXLabels(points, pad, chartW, H, mutedColor) {
+        if (points.length === 0) return;
+        ctx.fillStyle = mutedColor;
+        ctx.font = '10px sans-serif';
+        ctx.textAlign = 'center';
+        ctx.textBaseline = 'top';
+
+        // 自适应标签间隔
+        const maxLabels = Math.floor(chartW / 60);
+        const step = Math.max(1, Math.ceil(points.length / maxLabels));
+
+        points.forEach((p, i) => {
+            if (i % step !== 0 && i !== points.length - 1) return;
+            const d = new Date(p.entry.created_at);
+            const label = `${d.getMonth() + 1}/${d.getDate()}`;
+            ctx.fillText(label, p.x, pad.top + (H - pad.top - pad.bottom) + 8);
+        });
+    }
+
+    // ── Canvas 交互 ──
+    function onCanvasMouseMove(e) {
+        const rect = canvas.getBoundingClientRect();
+        const mx = e.clientX - rect.left;
+        const my = e.clientY - rect.top;
+        handleHover(mx, my);
+    }
+
+    function onCanvasMouseLeave() {
+        hoveredIndex = -1;
+        const tooltip = $('#chartTooltip');
+        if (tooltip) tooltip.classList.remove('visible');
+        drawChart();
+    }
+
+    function onCanvasTouch(e) {
+        if (!e.touches.length) return;
+        const rect = canvas.getBoundingClientRect();
+        const mx = e.touches[0].clientX - rect.left;
+        const my = e.touches[0].clientY - rect.top;
+        handleHover(mx, my);
+    }
+
+    function onCanvasTouchEnd() {
+        hoveredIndex = -1;
+        const tooltip = $('#chartTooltip');
+        if (tooltip) tooltip.classList.remove('visible');
+        drawChart();
+    }
+
+    function handleHover(mx, my) {
+        if (entries.length === 0 || animProgress < 1) return;
+
+        const W = canvas.width / dpr;
+        const H = canvas.height / dpr;
+        const pad = { top: 20, right: 24, bottom: 36, left: 40 };
+        const chartW = W - pad.left - pad.right;
+        const chartH = H - pad.top - pad.bottom;
+        const n = entries.length;
+
+        let closestIdx = -1;
+        let closestDist = Infinity;
+
+        entries.forEach((entry, i) => {
+            const x = pad.left + (n > 1 ? (i / (n - 1)) * chartW : chartW / 2);
+            const yUser = pad.top + chartH - ((entry.user_score - 1) / 9) * chartH;
+            const dist = Math.sqrt((mx - x) ** 2 + (my - yUser) ** 2);
+            if (dist < closestDist && dist < 30) {
+                closestDist = dist;
+                closestIdx = i;
+            }
+        });
+
+        if (closestIdx !== hoveredIndex) {
+            hoveredIndex = closestIdx;
+            drawChart();
+            updateTooltip(closestIdx);
+        }
+    }
+
+    function updateTooltip(idx) {
+        const tooltip = $('#chartTooltip');
+        if (!tooltip || idx < 0 || idx >= entries.length) {
+            if (tooltip) tooltip.classList.remove('visible');
+            return;
+        }
+
+        const entry = entries[idx];
+        const W = canvas.width / dpr;
+        const pad = { top: 20, right: 24, bottom: 36, left: 40 };
+        const chartW = W - pad.left - pad.right;
+        const n = entries.length;
+        const x = pad.left + (n > 1 ? (idx / (n - 1)) * chartW : chartW / 2);
+
+        const d = new Date(entry.created_at);
+        $('#tooltipDate').textContent = d.toLocaleDateString('zh-CN', { month: 'long', day: 'numeric', weekday: 'short' });
+        $('#tooltipUser').textContent = entry.user_score + ' 分';
+        $('#tooltipAi').textContent = entry.ai_score != null ? entry.ai_score + ' 分' : '—';
+
+        // 定位
+        const wrap = $('#canvasWrap');
+        const wrapRect = wrap.getBoundingClientRect();
+        let left = x + 12;
+        if (left + 160 > wrapRect.width) left = x - 160;
+        let top = 20;
+        tooltip.style.left = left + 'px';
+        tooltip.style.top = top + 'px';
+        tooltip.classList.add('visible');
+    }
+
+    // ── 历史记录渲染 ──
+    function renderHistory() {
+        const tbody = $('#historyBody');
+        const emptyEl = $('#emptyState');
+        const countEl = $('#historyCount');
+
+        if (!tbody) return;
+
+        if (entries.length === 0) {
+            tbody.innerHTML = '';
+            if (emptyEl) emptyEl.style.display = 'block';
+            if (countEl) countEl.textContent = '';
+            return;
+        }
+
+        if (emptyEl) emptyEl.style.display = 'none';
+        if (countEl) countEl.textContent = `共 ${entries.length} 条`;
+
+        // 按时间倒序显示
+        const sorted = [...entries].reverse();
+        tbody.innerHTML = sorted.map(e => {
+            const d = new Date(e.created_at);
+            const dateStr = d.toLocaleDateString('zh-CN', { month: '2-digit', day: '2-digit' });
+            const timeStr = d.toLocaleTimeString('zh-CN', { hour: '2-digit', minute: '2-digit' });
+            const moodHtml = e.user_mood ? `<span class="mood-tag user">${escapeHtml(e.user_mood)}</span>` : '';
+            const aiMoodHtml = e.ai_mood ? `<span class="mood-tag ai">${escapeHtml(e.ai_mood)}</span>` : '';
+            const comment = e.user_comment || e.ai_comment || '';
+            return `<tr>
+                <td><div>${dateStr}</div><div style="font-size:.72rem;color:var(--muted)">${timeStr}</div></td>
+                <td><span class="score-badge user">${e.user_score}</span></td>
+                <td>${e.ai_score != null ? `<span class="score-badge ai">${e.ai_score}</span>` : '<span style="color:var(--muted)">—</span>'}</td>
+                <td>${moodHtml}${aiMoodHtml}</td>
+                <td class="comment-cell" title="${escapeHtml(comment)}">${escapeHtml(comment) || '<span style="color:var(--muted)">—</span>'}</td>
+            </tr>`;
+        }).join('');
+    }
+
+    // ── 工具函数 ──
+    function parseColor(color) {
+        const temp = document.createElement('div');
+        temp.style.color = color;
+        document.body.appendChild(temp);
+        const computed = getComputedStyle(temp).color;
+        document.body.removeChild(temp);
+        const match = computed.match(/(\d+)/g);
+        if (match && match.length >= 3) {
+            return { r: parseInt(match[0]), g: parseInt(match[1]), b: parseInt(match[2]) };
+        }
+        // 默认暖色
+        return { r: 192, g: 139, b: 114 };
+    }
+
+    function debounce(fn, ms) {
+        let timer;
+        return function(...args) {
+            clearTimeout(timer);
+            timer = setTimeout(() => fn.apply(this, args), ms);
+        };
+    }
+
+    // 暴露给全局（主题切换后重绘）
+    const origApplyTheme = window.applyTheme;
+    window.applyTheme = function(name) {
+        origApplyTheme(name);
+        setTimeout(drawChart, 50);
+    };
+
+})();
+</script>
+</body>
+</html>

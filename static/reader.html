@@ -1,0 +1,284 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>苍聿居阅读器 - 苍聿居</title>
+<style id="global-css"></style>
+<style>
+.reader-page { max-width: 900px; margin: 0 auto; padding: 16px; display: flex; flex-direction: column; gap: 16px; }
+
+/* 阅读状态卡 */
+.reading-state {
+  background: var(--card); backdrop-filter: blur(12px); border: 1px solid var(--border);
+  border-radius: var(--radius-lg); padding: 24px; transition: box-shadow .2s;
+}
+.reading-state:hover { box-shadow: 0 4px 20px var(--shadow); }
+
+.state-header { display: flex; align-items: center; gap: 14px; margin-bottom: 18px; }
+.state-book-icon {
+  width: 52px; height: 68px; border-radius: 6px; background: var(--accentLight);
+  display: flex; align-items: center; justify-content: center; font-size: 1.6rem;
+  flex-shrink: 0; position: relative; overflow: hidden;
+}
+.state-book-icon::after {
+  content: ''; position: absolute; left: 0; top: 0; bottom: 0; width: 4px;
+  background: var(--accent); opacity: .6;
+}
+.state-info { flex: 1; min-width: 0; }
+.state-book-title { font-size: 1.15rem; font-weight: 700; margin-bottom: 4px; overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
+.state-book-meta { font-size: .8rem; color: var(--muted); display: flex; flex-wrap: wrap; gap: 12px; }
+
+/* 进度条 */
+.progress-section { margin-top: 16px; }
+.progress-label { display: flex; justify-content: space-between; font-size: .8rem; color: var(--muted); margin-bottom: 6px; }
+.progress-bar {
+  width: 100%; height: 8px; border-radius: 4px; background: var(--border);
+  overflow: hidden; position: relative;
+}
+.progress-fill {
+  height: 100%; border-radius: 4px; background: linear-gradient(90deg, var(--accent), color-mix(in srgb, var(--accent) 70%, #fff));
+  transition: width .8s cubic-bezier(.4,0,.2,1);
+  position: relative;
+}
+.progress-fill::after {
+  content: ''; position: absolute; right: 0; top: 0; bottom: 0; width: 20px;
+  background: linear-gradient(90deg, transparent, rgba(255,255,255,.3));
+}
+
+/* 统计行 */
+.state-stats { display: grid; grid-template-columns: repeat(3, 1fr); gap: 10px; margin-top: 16px; }
+.state-stat { text-align: center; padding: 10px 0; }
+.state-stat .val { font-size: 1.1rem; font-weight: 700; color: var(--accent); }
+.state-stat .lbl { font-size: .72rem; color: var(--muted); margin-top: 2px; }
+
+/* 书单 */
+.booklist-section {
+  background: var(--card); backdrop-filter: blur(12px); border: 1px solid var(--border);
+  border-radius: var(--radius-lg); padding: 20px;
+}
+.booklist-header { display: flex; justify-content: space-between; align-items: center; margin-bottom: 14px; }
+.booklist-header h3 { font-size: .95rem; color: var(--accent); }
+
+.book-grid { display: grid; grid-template-columns: repeat(auto-fill, minmax(200px, 1fr)); gap: 12px; }
+
+.book-card {
+  background: var(--inputBg); border: 1px solid var(--border); border-radius: var(--radius);
+  padding: 14px; cursor: default; transition: all .2s; position: relative; overflow: hidden;
+}
+.book-card:hover { transform: translateY(-2px); box-shadow: 0 4px 16px var(--shadow); border-color: var(--accent); }
+.book-card .book-cover {
+  width: 100%; height: 120px; border-radius: 6px; background: var(--accentLight);
+  display: flex; align-items: center; justify-content: center; font-size: 2.2rem;
+  margin-bottom: 10px; position: relative; overflow: hidden;
+}
+.book-card .book-cover::before {
+  content: ''; position: absolute; left: 0; top: 0; bottom: 0; width: 5px;
+  background: var(--accent); opacity: .5;
+}
+.book-card .book-title { font-size: .9rem; font-weight: 600; margin-bottom: 4px; overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
+.book-card .book-author { font-size: .75rem; color: var(--muted); margin-bottom: 8px; }
+.book-card .book-progress-bar {
+  width: 100%; height: 4px; border-radius: 2px; background: var(--border); overflow: hidden;
+}
+.book-card .book-progress-fill {
+  height: 100%; border-radius: 2px; background: var(--accent);
+  transition: width .5s ease;
+}
+.book-card .book-progress-text { font-size: .7rem; color: var(--muted); margin-top: 4px; text-align: right; }
+.book-card .book-current-badge {
+  position: absolute; top: 8px; right: 8px; padding: 2px 8px; border-radius: 10px;
+  font-size: .65rem; background: var(--accent); color: #fff; font-weight: 600;
+}
+
+/* 空状态 */
+.empty-books { text-align: center; padding: 50px 20px; color: var(--muted); }
+.empty-books .icon { font-size: 2.5rem; margin-bottom: 8px; }
+
+/* 加载 */
+.loading-wrap { display: flex; align-items: center; justify-content: center; padding: 40px; gap: 10px; color: var(--muted); font-size: .875rem; }
+
+@media (max-width: 768px) {
+  .state-stats { grid-template-columns: 1fr; gap: 4px; }
+  .state-stat { display: flex; align-items: center; justify-content: space-between; text-align: left; padding: 6px 0; }
+  .state-stat .val { order: 2; }
+  .book-grid { grid-template-columns: 1fr 1fr; }
+  .state-header { gap: 10px; }
+  .state-book-icon { width: 44px; height: 56px; font-size: 1.3rem; }
+}
+@media (max-width: 480px) {
+  .book-grid { grid-template-columns: 1fr; }
+}
+</style>
+</head>
+<body>
+
+<div id="nav-container"></div>
+
+<div class="reader-page">
+  <!-- 阅读状态 -->
+  <div class="reading-state" id="readingState">
+    <div class="state-header">
+      <div class="state-book-icon" id="stateBookIcon">📚</div>
+      <div class="state-info">
+        <div class="state-book-title" id="stateBookTitle">暂无阅读中</div>
+        <div class="state-book-meta">
+          <span id="stateAuthor"></span>
+          <span id="stateLastRead"></span>
+        </div>
+      </div>
+    </div>
+    <div class="progress-section" id="progressSection" style="display:none;">
+      <div class="progress-label">
+        <span>阅读进度</span>
+        <span id="progressPercent">0%</span>
+      </div>
+      <div class="progress-bar">
+        <div class="progress-fill" id="progressFill" style="width:0%"></div>
+      </div>
+    </div>
+    <div class="state-stats">
+      <div class="state-stat"><span class="lbl">当前章节</span><span class="val" id="statChapter">-</span></div>
+      <div class="state-stat"><span class="lbl">总章节</span><span class="val" id="statTotalChapters">-</span></div>
+      <div class="state-stat"><span class="lbl">阅读时长</span><span class="val" id="statReadTime">-</span></div>
+    </div>
+  </div>
+
+  <!-- 书单 -->
+  <div class="booklist-section">
+    <div class="booklist-header">
+      <h3>📚 书架</h3>
+      <button class="btn btn-ghost btn-sm" onclick="loadBooklist()">刷新</button>
+    </div>
+    <div id="bookGrid" class="book-grid">
+      <div class="loading-wrap"><div class="spinner"></div>加载中...</div>
+    </div>
+  </div>
+</div>
+
+<script src="/common.js"></script>
+<script>
+(function() {
+  let booklist = [];
+  let currentBookId = null;
+
+  document.addEventListener('DOMContentLoaded', () => {
+    document.getElementById('global-css').textContent = GLOBAL_CSS;
+    document.getElementById('nav-container').innerHTML = renderNav('panel');
+    loadReadingState();
+    loadBooklist();
+  });
+
+  // ── 加载阅读状态 ──
+  async function loadReadingState() {
+    try {
+      const data = await apiGet('/api/v1/kico/state');
+      renderReadingState(data);
+    } catch (e) {
+      console.error('加载阅读状态失败:', e);
+      renderReadingState(null);
+    }
+  }
+
+  // ── 渲染阅读状态 ──
+  function renderReadingState(data) {
+    if (!data || (!data.title && !data.book_title)) {
+      document.getElementById('stateBookTitle').textContent = '暂无阅读中';
+      document.getElementById('stateBookIcon').textContent = '📚';
+      document.getElementById('stateAuthor').textContent = '';
+      document.getElementById('stateLastRead').textContent = '';
+      document.getElementById('progressSection').style.display = 'none';
+      document.getElementById('statChapter').textContent = '-';
+      document.getElementById('statTotalChapters').textContent = '-';
+      document.getElementById('statReadTime').textContent = '-';
+      return;
+    }
+
+    const title = data.title || data.book_title || '未知书名';
+    const author = data.author || data.book_author || '';
+    const progress = data.progress ?? data.percentage ?? 0;
+    const chapter = data.current_chapter ?? data.chapter ?? '-';
+    const totalChapters = data.total_chapters ?? data.chapters ?? '-';
+    const readTime = data.read_time ?? data.reading_time ?? null;
+    const lastRead = data.last_read ?? data.updated_at ?? data.timestamp ?? '';
+    currentBookId = data.book_id ?? data.id ?? null;
+
+    document.getElementById('stateBookTitle').textContent = title;
+    document.getElementById('stateBookIcon').textContent = getBookEmoji(title);
+    document.getElementById('stateAuthor').textContent = author ? `作者: ${author}` : '';
+    document.getElementById('stateLastRead').textContent = lastRead ? `最后阅读: ${formatTime(lastRead)}` : '';
+
+    // 进度
+    const pct = Math.max(0, Math.min(100, progress));
+    document.getElementById('progressSection').style.display = 'block';
+    document.getElementById('progressPercent').textContent = pct + '%';
+    document.getElementById('progressFill').style.width = pct + '%';
+
+    // 统计
+    document.getElementById('statChapter').textContent = chapter;
+    document.getElementById('statTotalChapters').textContent = totalChapters;
+    document.getElementById('statReadTime').textContent = readTime ? formatReadTime(readTime) : '-';
+  }
+
+  // ── 格式化阅读时长 ──
+  function formatReadTime(minutes) {
+    if (typeof minutes === 'string') return minutes;
+    if (minutes < 60) return minutes + '分钟';
+    const h = Math.floor(minutes / 60);
+    const m = minutes % 60;
+    return m > 0 ? `${h}小时${m}分` : `${h}小时`;
+  }
+
+  // ── 根据书名生成emoji ──
+  function getBookEmoji(title) {
+    const emojis = ['📕', '📗', '📘', '📙', '📓', '📔', '📒', '📖'];
+    let hash = 0;
+    for (let i = 0; i < title.length; i++) hash = ((hash << 5) - hash + title.charCodeAt(i)) | 0;
+    return emojis[Math.abs(hash) % emojis.length];
+  }
+
+  // ── 加载书单 ──
+  async function loadBooklist() {
+    const grid = document.getElementById('bookGrid');
+    grid.innerHTML = '<div class="loading-wrap"><div class="spinner"></div>加载中...</div>';
+    try {
+      const data = await apiPost('/api/v1/kico/booklist', {});
+      booklist = data.books || data.booklist || data.list || data || [];
+      renderBooklist(booklist);
+    } catch (e) {
+      console.error('加载书单失败:', e);
+      grid.innerHTML = `<div class="empty-books"><div class="icon">📭</div><div>加载失败: ${escapeHtml(e.message)}</div></div>`;
+    }
+  }
+  window.loadBooklist = loadBooklist;
+
+  // ── 渲染书单 ──
+  function renderBooklist(books) {
+    const grid = document.getElementById('bookGrid');
+    if (!books || !books.length) {
+      grid.innerHTML = '<div class="empty-books"><div class="icon">📚</div><div>书架空空如也，添加一本书开始阅读吧</div></div>';
+      return;
+    }
+    grid.innerHTML = books.map(book => {
+      const title = book.title || book.name || book.book_title || '未知';
+      const author = book.author || book.book_author || '';
+      const progress = book.progress ?? book.percentage ?? 0;
+      const bookId = book.book_id || book.id || '';
+      const isCurrent = bookId && bookId === currentBookId;
+      const pct = Math.max(0, Math.min(100, progress));
+      const emoji = getBookEmoji(title);
+
+      return `<div class="book-card">
+        ${isCurrent ? '<div class="book-current-badge">在读</div>' : ''}
+        <div class="book-cover">${emoji}</div>
+        <div class="book-title">${escapeHtml(title)}</div>
+        ${author ? `<div class="book-author">${escapeHtml(author)}</div>` : ''}
+        <div class="book-progress-bar"><div class="book-progress-fill" style="width:${pct}%"></div></div>
+        <div class="book-progress-text">${pct}%</div>
+      </div>`;
+    }).join('');
+  }
+})();
+</script>
+</body>
+</html>

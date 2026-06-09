@@ -1,0 +1,327 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>设备状态 - 苍聿居</title>
+<style id="global-css"></style>
+<style>
+.device-page { max-width: 900px; margin: 0 auto; padding: 16px; display: flex; flex-direction: column; gap: 16px; }
+
+/* 电池可视化 */
+.battery-visual {
+  background: var(--card); backdrop-filter: blur(12px); border: 1px solid var(--border);
+  border-radius: var(--radius-lg); padding: 32px 24px; text-align: center;
+  transition: box-shadow .2s;
+}
+.battery-visual:hover { box-shadow: 0 4px 20px var(--shadow); }
+
+.battery-icon-wrap {
+  display: inline-flex; align-items: center; justify-content: center;
+  margin-bottom: 16px; position: relative;
+}
+.battery-shell {
+  width: 120px; height: 56px; border: 3px solid var(--text); border-radius: 8px;
+  position: relative; overflow: hidden; background: transparent;
+}
+.battery-tip {
+  width: 8px; height: 22px; background: var(--text); border-radius: 0 4px 4px 0;
+  position: absolute; right: -11px; top: 50%; transform: translateY(-50%); opacity: .7;
+}
+.battery-fill {
+  position: absolute; left: 3px; top: 3px; bottom: 3px; border-radius: 4px;
+  transition: width .8s cubic-bezier(.4,0,.2,1), background .5s;
+}
+.battery-fill.level-high { background: linear-gradient(135deg, #27ae60, #2ecc71); }
+.battery-fill.level-mid { background: linear-gradient(135deg, #f39c12, #e67e22); }
+.battery-fill.level-low { background: linear-gradient(135deg, #e74c3c, #c0392b); }
+
+.battery-percent {
+  font-size: 3rem; font-weight: 800; line-height: 1; margin-bottom: 4px;
+  transition: color .5s;
+}
+.battery-percent.level-high { color: #27ae60; }
+.battery-percent.level-mid { color: #e67e22; }
+.battery-percent.level-low { color: #e74c3c; }
+
+.battery-status {
+  font-size: .9rem; color: var(--muted); display: flex; align-items: center;
+  justify-content: center; gap: 6px;
+}
+.charging-indicator {
+  display: inline-block; animation: chargePulse 1.5s ease-in-out infinite;
+}
+@keyframes chargePulse { 0%,100% { opacity: .6; } 50% { opacity: 1; } }
+
+/* 状态卡片网格 */
+.status-grid { display: grid; grid-template-columns: 1fr 1fr; gap: 12px; }
+.status-card {
+  background: var(--card); backdrop-filter: blur(12px); border: 1px solid var(--border);
+  border-radius: var(--radius-lg); padding: 16px; transition: box-shadow .2s;
+}
+.status-card:hover { box-shadow: 0 4px 20px var(--shadow); }
+.status-card .card-icon { font-size: 1.5rem; margin-bottom: 8px; }
+.status-card .card-label { font-size: .75rem; color: var(--muted); margin-bottom: 4px; }
+.status-card .card-value { font-size: 1rem; font-weight: 600; word-break: break-word; }
+.status-card.full-width { grid-column: 1 / -1; }
+
+/* 上报表单 */
+.report-section {
+  background: var(--card); backdrop-filter: blur(12px); border: 1px solid var(--border);
+  border-radius: var(--radius-lg); padding: 20px;
+}
+.report-section h3 { font-size: .95rem; margin-bottom: 16px; color: var(--accent); }
+
+.form-group { margin-bottom: 16px; }
+.form-group label { display: block; font-size: .8rem; color: var(--muted); margin-bottom: 6px; font-weight: 500; }
+.form-group input[type="range"] {
+  width: 100%; -webkit-appearance: none; appearance: none; height: 6px;
+  border-radius: 3px; background: var(--border); outline: none; border: none; padding: 0;
+}
+.form-group input[type="range"]::-webkit-slider-thumb {
+  -webkit-appearance: none; width: 20px; height: 20px; border-radius: 50%;
+  background: var(--accent); cursor: pointer; border: 2px solid var(--cardSolid);
+}
+.form-group input[type="range"]::-moz-range-thumb {
+  width: 20px; height: 20px; border-radius: 50%;
+  background: var(--accent); cursor: pointer; border: 2px solid var(--cardSolid);
+}
+.range-display { display: flex; justify-content: space-between; align-items: center; margin-top: 6px; }
+.range-display .range-value { font-weight: 700; font-size: 1.1rem; color: var(--accent); }
+
+.toggle-row { display: flex; align-items: center; justify-content: space-between; }
+.toggle-switch {
+  width: 48px; height: 26px; border-radius: 13px; background: var(--border);
+  position: relative; cursor: pointer; transition: background .3s;
+}
+.toggle-switch.active { background: #27ae60; }
+.toggle-switch::after {
+  content: ''; position: absolute; width: 22px; height: 22px; border-radius: 50%;
+  background: #fff; top: 2px; left: 2px; transition: transform .3s;
+  box-shadow: 0 1px 3px rgba(0,0,0,.2);
+}
+.toggle-switch.active::after { transform: translateX(22px); }
+
+.form-group input[type="text"], .form-group textarea {
+  width: 100%; padding: 10px 14px; border-radius: var(--radius); border: 1px solid var(--border);
+  background: var(--inputBg); color: var(--text); font-size: .875rem; outline: none;
+  transition: border .2s;
+}
+.form-group input[type="text"]:focus, .form-group textarea:focus { border-color: var(--accent); }
+.form-group textarea { min-height: 60px; resize: vertical; }
+
+.report-actions { display: flex; justify-content: flex-end; gap: 8px; margin-top: 4px; }
+
+/* 刷新提示 */
+.refresh-info {
+  text-align: center; font-size: .75rem; color: var(--muted); padding: 4px;
+  display: flex; align-items: center; justify-content: center; gap: 6px;
+}
+.refresh-dot { width: 6px; height: 6px; border-radius: 50%; background: #27ae60; animation: blink 2s infinite; }
+@keyframes blink { 0%,100% { opacity: 1; } 50% { opacity: .3; } }
+
+@media (max-width: 768px) {
+  .status-grid { grid-template-columns: 1fr; }
+  .battery-percent { font-size: 2.4rem; }
+  .battery-shell { width: 96px; height: 44px; }
+}
+</style>
+</head>
+<body>
+
+<div id="nav-container"></div>
+
+<div class="device-page">
+  <!-- 电池可视化 -->
+  <div class="battery-visual">
+    <div class="battery-icon-wrap">
+      <div class="battery-shell">
+        <div class="battery-fill level-high" id="batteryFill" style="width:0%"></div>
+        <div class="battery-tip"></div>
+      </div>
+    </div>
+    <div class="battery-percent level-high" id="batteryPercent">--%</div>
+    <div class="battery-status">
+      <span id="chargingStatus">未知状态</span>
+    </div>
+  </div>
+
+  <!-- 状态卡片 -->
+  <div class="status-grid">
+    <div class="status-card">
+      <div class="card-icon">🔋</div>
+      <div class="card-label">电量</div>
+      <div class="card-value" id="cardBattery">--</div>
+    </div>
+    <div class="status-card">
+      <div class="card-icon">⚡</div>
+      <div class="card-label">充电状态</div>
+      <div class="card-value" id="cardCharging">--</div>
+    </div>
+    <div class="status-card full-width">
+      <div class="card-icon">🔔</div>
+      <div class="card-label">最近通知</div>
+      <div class="card-value" id="cardNotification">暂无通知</div>
+    </div>
+    <div class="status-card">
+      <div class="card-icon">📱</div>
+      <div class="card-label">最近应用</div>
+      <div class="card-value" id="cardApp">--</div>
+    </div>
+    <div class="status-card">
+      <div class="card-icon">🕐</div>
+      <div class="card-label">最后更新</div>
+      <div class="card-value" id="cardUpdate">--</div>
+    </div>
+  </div>
+
+  <!-- 上报表单 -->
+  <div class="report-section">
+    <h3>📤 手动上报设备状态</h3>
+    <div class="form-group">
+      <label>电池电量</label>
+      <input type="range" id="reportBattery" min="0" max="100" value="50" oninput="updateBatteryPreview()" />
+      <div class="range-display">
+        <span style="font-size:.75rem;color:var(--muted)">0%</span>
+        <span class="range-value" id="batteryPreview">50%</span>
+        <span style="font-size:.75rem;color:var(--muted)">100%</span>
+      </div>
+    </div>
+    <div class="form-group">
+      <div class="toggle-row">
+        <label style="margin-bottom:0">正在充电</label>
+        <div class="toggle-switch" id="chargingToggle" onclick="toggleCharging()"></div>
+      </div>
+    </div>
+    <div class="form-group">
+      <label>通知内容</label>
+      <input type="text" id="reportNotification" placeholder="输入最近的通知文本..." />
+    </div>
+    <div class="form-group">
+      <label>当前应用</label>
+      <input type="text" id="reportApp" placeholder="输入当前使用的应用名..." />
+    </div>
+    <div class="report-actions">
+      <button class="btn btn-ghost btn-sm" onclick="clearReportForm()">清空</button>
+      <button class="btn btn-primary btn-sm" onclick="submitReport()">上报</button>
+    </div>
+  </div>
+
+  <!-- 自动刷新提示 -->
+  <div class="refresh-info">
+    <span class="refresh-dot"></span>
+    <span>每30秒自动刷新</span>
+    <button class="btn btn-ghost btn-sm" onclick="loadStatus()" style="margin-left:8px;">立即刷新</button>
+  </div>
+</div>
+
+<script src="/common.js"></script>
+<script>
+(function() {
+  let isCharging = false;
+  let refreshTimer = null;
+
+  document.addEventListener('DOMContentLoaded', () => {
+    document.getElementById('global-css').textContent = GLOBAL_CSS;
+    document.getElementById('nav-container').innerHTML = renderNav('panel');
+    loadStatus();
+    // 每30秒自动刷新
+    refreshTimer = setInterval(loadStatus, 30000);
+  });
+
+  // ── 加载设备状态 ──
+  async function loadStatus() {
+    try {
+      const data = await apiGet('/api/v1/device/status');
+      updateDisplay(data);
+    } catch (e) {
+      console.error('加载设备状态失败:', e);
+    }
+  }
+  window.loadStatus = loadStatus;
+
+  // ── 更新显示 ──
+  function updateDisplay(data) {
+    const battery = data.battery_level ?? data.battery ?? null;
+    const charging = data.is_charging ?? data.charging ?? false;
+    const notification = data.notification_text ?? data.notification ?? '';
+    const appName = data.app_name ?? data.app ?? '';
+    const timestamp = data.timestamp ?? data.updated_at ?? data.last_update ?? '';
+
+    // 电池可视化
+    if (battery !== null && battery !== undefined) {
+      const pct = Math.max(0, Math.min(100, battery));
+      const levelClass = pct > 50 ? 'level-high' : pct > 20 ? 'level-mid' : 'level-low';
+      const fill = document.getElementById('batteryFill');
+      fill.style.width = pct + '%';
+      fill.className = 'battery-fill ' + levelClass;
+
+      const pctEl = document.getElementById('batteryPercent');
+      pctEl.textContent = pct + '%';
+      pctEl.className = 'battery-percent ' + levelClass;
+
+      document.getElementById('cardBattery').textContent = pct + '%';
+    }
+
+    // 充电状态
+    const chargeText = charging ? '正在充电 ⚡' : '未充电';
+    document.getElementById('chargingStatus').innerHTML = charging
+      ? '<span class="charging-indicator">⚡</span> 正在充电'
+      : '未充电';
+    document.getElementById('cardCharging').textContent = chargeText;
+
+    // 通知
+    document.getElementById('cardNotification').textContent = notification || '暂无通知';
+
+    // 应用
+    document.getElementById('cardApp').textContent = appName || '--';
+
+    // 更新时间
+    document.getElementById('cardUpdate').textContent = timestamp ? formatDateTime(timestamp) : '--';
+  }
+
+  // ── 电量滑块预览 ──
+  window.updateBatteryPreview = function() {
+    const val = document.getElementById('reportBattery').value;
+    document.getElementById('batteryPreview').textContent = val + '%';
+  };
+
+  // ── 充电开关 ──
+  window.toggleCharging = function() {
+    isCharging = !isCharging;
+    const el = document.getElementById('chargingToggle');
+    el.classList.toggle('active', isCharging);
+  };
+
+  // ── 提交上报 ──
+  window.submitReport = async function() {
+    const battery_level = parseInt(document.getElementById('reportBattery').value);
+    const notification_text = document.getElementById('reportNotification').value.trim();
+    const app_name = document.getElementById('reportApp').value.trim();
+
+    const body = { battery_level, is_charging: isCharging };
+    if (notification_text) body.notification_text = notification_text;
+    if (app_name) body.app_name = app_name;
+
+    try {
+      await apiPost('/api/v1/device/report', body);
+      showToast('上报成功', 'success');
+      loadStatus();
+    } catch (e) {
+      showToast('上报失败: ' + e.message, 'error');
+    }
+  };
+
+  // ── 清空表单 ──
+  window.clearReportForm = function() {
+    document.getElementById('reportBattery').value = 50;
+    document.getElementById('batteryPreview').textContent = '50%';
+    isCharging = false;
+    document.getElementById('chargingToggle').classList.remove('active');
+    document.getElementById('reportNotification').value = '';
+    document.getElementById('reportApp').value = '';
+  };
+})();
+</script>
+</body>
+</html>

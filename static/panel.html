@@ -1,0 +1,546 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>控制面板 · 苍聿居</title>
+<style>
+/* ═══ 全局变量 + 基础 ═══ */
+:root{--bg:#fdf6f0;--card:rgba(255,255,255,0.75);--cardSolid:#fff;--text:#4a3728;--muted:#8b7355;--accent:#c08b72;--accentLight:rgba(192,139,114,0.12);--border:rgba(160,128,96,0.15);--shadow:rgba(160,128,96,0.08);--inputBg:rgba(255,255,255,0.6);--radius:12px;--radius-lg:16px;--nav-h:56px;--green:#27ae60;--red:#e74c3c;--greenBg:rgba(39,174,96,0.1);--redBg:rgba(231,76,60,0.1)}
+*{margin:0;padding:0;box-sizing:border-box}
+html{font-size:16px;-webkit-text-size-adjust:100%}
+body{font-family:-apple-system,BlinkMacSystemFont,'Segoe UI','PingFang SC','Hiragino Sans GB','Microsoft YaHei',sans-serif;background:var(--bg);color:var(--text);min-height:100vh;padding-top:var(--nav-h);transition:background .3s,color .3s}
+a{color:var(--accent);text-decoration:none}
+button{cursor:pointer;font-family:inherit;border:none;background:none;color:inherit}
+input,textarea,select{font-family:inherit;font-size:inherit;color:var(--text);background:var(--inputBg);border:1px solid var(--border);border-radius:var(--radius);padding:10px 14px;outline:none;transition:border .2s}
+input:focus,textarea:focus,select:focus{border-color:var(--accent)}
+
+/* 导航栏 */
+.main-nav{position:fixed;top:0;left:0;right:0;height:var(--nav-h);background:var(--card);backdrop-filter:blur(20px);-webkit-backdrop-filter:blur(20px);border-bottom:1px solid var(--border);display:flex;align-items:center;padding:0 16px;z-index:1000;gap:8px}
+.nav-brand{font-size:1.15rem;font-weight:700;color:var(--accent);cursor:pointer;white-space:nowrap}
+.nav-links{display:flex;gap:2px;flex:1;justify-content:center;overflow-x:auto;scrollbar-width:none}
+.nav-links::-webkit-scrollbar{display:none}
+.nav-link{display:flex;align-items:center;gap:4px;padding:6px 12px;border-radius:var(--radius);font-size:.875rem;color:var(--muted);transition:all .2s;white-space:nowrap}
+.nav-link:hover{background:var(--accentLight);color:var(--accent)}
+.nav-link.active{background:var(--accentLight);color:var(--accent);font-weight:600}
+.nav-theme{font-size:1.1rem;padding:6px 8px;border-radius:var(--radius);transition:background .2s}
+.nav-theme:hover{background:var(--accentLight)}
+
+/* 卡片 */
+.card{background:var(--card);backdrop-filter:blur(12px);-webkit-backdrop-filter:blur(12px);border:1px solid var(--border);border-radius:var(--radius-lg);padding:20px;transition:box-shadow .2s,transform .15s}
+.card:hover{box-shadow:0 4px 20px var(--shadow)}
+
+/* 按钮 */
+.btn{display:inline-flex;align-items:center;justify-content:center;gap:6px;padding:8px 18px;border-radius:var(--radius);font-size:.875rem;font-weight:500;transition:all .2s;cursor:pointer}
+.btn-primary{background:var(--accent);color:#fff}
+.btn-primary:hover{opacity:.9;transform:translateY(-1px)}
+.btn-ghost{background:var(--accentLight);color:var(--accent)}
+.btn-ghost:hover{background:var(--accent);color:#fff}
+.btn-sm{padding:5px 12px;font-size:.8rem}
+.btn-danger{background:#e74c3c;color:#fff}
+.btn-danger:hover{opacity:.9}
+
+/* 布局 */
+.container{max-width:960px;margin:0 auto;padding:20px 16px}
+.section-title{font-size:1.05rem;font-weight:700;margin-bottom:14px;display:flex;align-items:center;gap:8px;color:var(--text)}
+.section-title .icon{font-size:1.2rem}
+
+/* ═══ 仪表盘概览 ═══ */
+.dash-grid{display:grid;grid-template-columns:repeat(4,1fr);gap:12px;margin-bottom:24px}
+.dash-stat{background:var(--card);backdrop-filter:blur(12px);border:1px solid var(--border);border-radius:var(--radius-lg);padding:20px 16px;text-align:center;transition:all .2s}
+.dash-stat:hover{box-shadow:0 4px 20px var(--shadow);transform:translateY(-2px)}
+.dash-stat .num{font-size:2rem;font-weight:800;color:var(--accent);line-height:1.1}
+.dash-stat .label{font-size:.8rem;color:var(--muted);margin-top:6px}
+.dash-stat .dot{display:inline-block;width:8px;height:8px;border-radius:50%;margin-right:6px;vertical-align:middle}
+.dot-green{background:var(--green);box-shadow:0 0 6px rgba(39,174,96,0.4)}
+.dot-red{background:var(--red);box-shadow:0 0 6px rgba(231,76,60,0.4)}
+
+/* ═══ 快速触发 ═══ */
+.trigger-grid{display:grid;grid-template-columns:repeat(auto-fill,minmax(160px,1fr));gap:10px;margin-bottom:24px}
+.trigger-btn{display:flex;flex-direction:column;align-items:center;gap:8px;padding:16px 12px;background:var(--card);backdrop-filter:blur(12px);border:1px solid var(--border);border-radius:var(--radius-lg);cursor:pointer;transition:all .2s;position:relative;overflow:hidden}
+.trigger-btn:hover{border-color:var(--accent);box-shadow:0 4px 16px var(--shadow);transform:translateY(-1px)}
+.trigger-btn:active{transform:scale(.97)}
+.trigger-btn .t-icon{font-size:1.6rem}
+.trigger-btn .t-label{font-size:.85rem;font-weight:600;color:var(--text)}
+.trigger-btn .t-status{font-size:.72rem;color:var(--muted);min-height:16px;text-align:center;word-break:break-all}
+.trigger-btn.loading{pointer-events:none;opacity:.7}
+.trigger-btn.loading .t-icon{animation:pulse .8s ease-in-out infinite}
+@keyframes pulse{0%,100%{opacity:1}50%{opacity:.4}}
+
+/* ═══ 天气 ═══ */
+.weather-card{display:flex;align-items:center;gap:16px;padding:20px}
+.weather-card .w-icon{font-size:3rem;line-height:1}
+.weather-card .w-info{flex:1}
+.weather-card .w-temp{font-size:2rem;font-weight:800;color:var(--accent)}
+.weather-card .w-desc{font-size:.85rem;color:var(--muted);margin-top:2px}
+.weather-card .w-city{font-size:.8rem;color:var(--muted);margin-top:4px}
+.weather-card .w-detail{display:flex;gap:12px;margin-top:8px;font-size:.78rem;color:var(--muted)}
+
+/* ═══ Profile Cards ═══ */
+.profile-list{display:flex;flex-direction:column;gap:8px;margin-top:12px}
+.profile-item{display:flex;align-items:center;gap:12px;padding:12px 16px;background:var(--cardSolid);border:1px solid var(--border);border-radius:var(--radius);transition:all .2s}
+.profile-item:hover{border-color:var(--accent);box-shadow:0 2px 8px var(--shadow)}
+.profile-item .p-key{font-weight:600;font-size:.88rem;min-width:100px;color:var(--accent)}
+.profile-item .p-value{flex:1;font-size:.85rem;color:var(--text);overflow:hidden;text-overflow:ellipsis;white-space:nowrap}
+.profile-item .p-actions{display:flex;gap:6px;flex-shrink:0}
+.profile-add{display:flex;gap:8px;margin-top:12px;flex-wrap:wrap}
+.profile-add input{flex:1;min-width:120px}
+
+/* ═══ DeployBot ═══ */
+.deploy-grid{display:grid;grid-template-columns:1fr 1fr;gap:12px;margin-top:12px}
+.deploy-stat{padding:12px;background:var(--cardSolid);border-radius:var(--radius);border:1px solid var(--border)}
+.deploy-stat .ds-label{font-size:.78rem;color:var(--muted)}
+.deploy-stat .ds-value{font-size:1rem;font-weight:600;color:var(--text);margin-top:4px}
+
+/* ═══ Agent Status ═══ */
+.agent-row{display:flex;align-items:center;justify-content:space-between;padding:12px 0;border-bottom:1px solid var(--border)}
+.agent-row:last-child{border-bottom:none}
+.agent-row .a-label{font-size:.88rem;color:var(--muted)}
+.agent-row .a-value{font-size:.88rem;font-weight:500;color:var(--text)}
+
+/* ═══ 模态框 ═══ */
+.modal-overlay{position:fixed;inset:0;background:rgba(0,0,0,0.4);backdrop-filter:blur(4px);z-index:2000;display:flex;align-items:center;justify-content:center;opacity:0;transition:opacity .2s;pointer-events:none}
+.modal-overlay.active{opacity:1;pointer-events:auto}
+.modal{background:var(--cardSolid);border-radius:var(--radius-lg);padding:24px;width:90%;max-width:480px;max-height:85vh;overflow-y:auto;transform:scale(.95);transition:transform .2s}
+.modal-overlay.active .modal{transform:scale(1)}
+.modal h3{margin-bottom:16px;font-size:1.1rem}
+.modal-actions{display:flex;gap:8px;justify-content:flex-end;margin-top:20px}
+.modal label{display:block;font-size:.82rem;color:var(--muted);margin-bottom:4px;margin-top:12px}
+.modal input,.modal textarea{width:100%}
+
+/* Toast */
+.toast{position:fixed;bottom:80px;left:50%;transform:translateX(-50%) translateY(20px);padding:10px 24px;border-radius:var(--radius);font-size:.875rem;z-index:9999;opacity:0;transition:all .3s;pointer-events:none}
+.toast.show{opacity:1;transform:translateX(-50%) translateY(0)}
+.toast-info{background:var(--accent);color:#fff}
+.toast-error{background:#e74c3c;color:#fff}
+.toast-success{background:#27ae60;color:#fff}
+
+/* 加载骨架 */
+.skeleton{background:linear-gradient(90deg,var(--border) 25%,var(--accentLight) 50%,var(--border) 75%);background-size:200% 100%;animation:shimmer 1.5s infinite;border-radius:var(--radius);height:20px}
+@keyframes shimmer{0%{background-position:200% 0}100%{background-position:-200% 0}}
+
+/* ═══ 响应式 ═══ */
+@media(max-width:768px){
+    .nav-link .nav-label{display:none}
+    .nav-link{padding:6px 8px;font-size:1rem}
+    .dash-grid{grid-template-columns:repeat(2,1fr)}
+    .trigger-grid{grid-template-columns:repeat(2,1fr)}
+    .deploy-grid{grid-template-columns:1fr}
+    .container{padding:12px}
+    .modal{width:95%;padding:18px}
+}
+@media(max-width:480px){
+    .dash-grid{grid-template-columns:1fr 1fr}
+    .trigger-grid{grid-template-columns:1fr 1fr}
+}
+@media(min-width:769px){
+    .mobile-only{display:none!important}
+}
+@media(max-width:768px){
+    .desktop-only{display:none!important}
+}
+</style>
+</head>
+<body>
+
+<!-- ═══ 导航栏 ═══ -->
+<div id="nav-container"></div>
+
+<!-- ═══ 主内容 ═══ -->
+<div class="container">
+
+  <!-- 仪表盘概览 -->
+  <div class="section-title"><span class="icon">📊</span> 仪表盘概览</div>
+  <div class="dash-grid" id="dashGrid">
+    <div class="dash-stat">
+      <div class="num" id="statMemories">—</div>
+      <div class="label">🧠 记忆总数</div>
+    </div>
+    <div class="dash-stat">
+      <div class="num" id="statDiary">—</div>
+      <div class="label">📖 日记条数</div>
+    </div>
+    <div class="dash-stat">
+      <div class="num" id="statSessions">—</div>
+      <div class="label">💬 聊天会话</div>
+    </div>
+    <div class="dash-stat">
+      <div class="num" id="statAgent"><span class="dot dot-green"></span>在线</div>
+      <div class="label">🤖 Agent 状态</div>
+    </div>
+  </div>
+
+  <!-- 快速触发 -->
+  <div class="section-title"><span class="icon">⚡</span> 快速触发</div>
+  <div class="trigger-grid" id="triggerGrid">
+    <div class="trigger-btn" onclick="fireTrigger('breathe','呼吸',this)">
+      <div class="t-icon">🌬️</div>
+      <div class="t-label">呼吸</div>
+      <div class="t-status"></div>
+    </div>
+    <div class="trigger-btn" onclick="fireTrigger('trigger/diary','生成日记',this)">
+      <div class="t-icon">📔</div>
+      <div class="t-label">生成日记</div>
+      <div class="t-status"></div>
+    </div>
+    <div class="trigger-btn" onclick="fireTrigger('trigger/cleanup','清理',this)">
+      <div class="t-icon">🧹</div>
+      <div class="t-label">清理</div>
+      <div class="t-status"></div>
+    </div>
+    <div class="trigger-btn" onclick="fireTrigger('trigger/tide','潮汐',this)">
+      <div class="t-icon">🌊</div>
+      <div class="t-label">潮汐</div>
+      <div class="t-status"></div>
+    </div>
+    <div class="trigger-btn" onclick="fireTrigger('trigger/chat-summarize','聊天总结',this)">
+      <div class="t-icon">📝</div>
+      <div class="t-label">聊天总结</div>
+      <div class="t-status"></div>
+    </div>
+  </div>
+
+  <!-- 天气 -->
+  <div class="section-title"><span class="icon">🌤</span> 天气</div>
+  <div class="card weather-card" id="weatherCard">
+    <div class="w-icon" id="wIcon">⏳</div>
+    <div class="w-info">
+      <div class="w-temp" id="wTemp">—</div>
+      <div class="w-desc" id="wDesc">加载中…</div>
+      <div class="w-city" id="wCity"></div>
+      <div class="w-detail" id="wDetail"></div>
+    </div>
+  </div>
+
+  <!-- Profile Cards -->
+  <div class="section-title" style="margin-top:24px"><span class="icon">🪪</span> 个人卡片</div>
+  <div class="card">
+    <div class="profile-add">
+      <input type="text" id="newCardKey" placeholder="卡片键 (key)">
+      <input type="text" id="newCardValue" placeholder="卡片值 (value)">
+      <button class="btn btn-primary btn-sm" onclick="addCard()">添加</button>
+    </div>
+    <div class="profile-list" id="profileList">
+      <div style="text-align:center;padding:20px;color:var(--muted);font-size:.85rem;">加载中…</div>
+    </div>
+  </div>
+
+  <!-- DeployBot -->
+  <div class="section-title" style="margin-top:24px"><span class="icon">🚀</span> DeployBot</div>
+  <div class="card" id="deployCard">
+    <div style="display:flex;align-items:center;justify-content:space-between;margin-bottom:12px;">
+      <span style="font-size:.9rem;font-weight:600;">部署状态</span>
+      <span id="deployDot" style="display:inline-flex;align-items:center;gap:6px;font-size:.82rem;">
+        <span class="dot dot-green"></span> 检测中…
+      </span>
+    </div>
+    <div class="deploy-grid" id="deployGrid">
+      <div class="deploy-stat"><div class="ds-label">最后部署</div><div class="ds-value" id="deployLast">—</div></div>
+      <div class="deploy-stat"><div class="ds-label">部署状态</div><div class="ds-value" id="deployStatus">—</div></div>
+      <div class="deploy-stat"><div class="ds-label">提交信息</div><div class="ds-value" id="deployCommit">—</div></div>
+      <div class="deploy-stat"><div class="ds-label">健康检查</div><div class="ds-value" id="deployHealth">—</div></div>
+    </div>
+  </div>
+
+  <!-- Agent Status -->
+  <div class="section-title" style="margin-top:24px"><span class="icon">🤖</span> Agent 状态</div>
+  <div class="card" id="agentCard">
+    <div id="agentRows">
+      <div style="text-align:center;padding:20px;color:var(--muted);font-size:.85rem;">加载中…</div>
+    </div>
+  </div>
+
+</div>
+
+<!-- ═══ 编辑卡片模态框 ═══ -->
+<div class="modal-overlay" id="cardModal">
+  <div class="modal">
+    <h3 id="cardModalTitle">编辑卡片</h3>
+    <label>卡片键 (Key)</label>
+    <input type="text" id="editCardKey" disabled>
+    <label>卡片值 (Value)</label>
+    <textarea id="editCardValue" rows="3"></textarea>
+    <div class="modal-actions">
+      <button class="btn btn-ghost btn-sm" onclick="closeCardModal()">取消</button>
+      <button class="btn btn-primary btn-sm" onclick="saveCardEdit()">保存</button>
+    </div>
+  </div>
+</div>
+
+<!-- ═══ 共享库 ═══ -->
+<script src="/common.js"></script>
+
+<script>
+// ── 导航栏 ──
+document.getElementById('nav-container').innerHTML = renderNav('panel');
+
+// ── 仪表盘数据加载 ──
+async function loadDashboard() {
+  try {
+    const data = await apiGet('/api/v1/dashboard');
+    if (data) {
+      const el1 = document.getElementById('statMemories');
+      const el2 = document.getElementById('statDiary');
+      const el3 = document.getElementById('statSessions');
+      if (el1) el1.textContent = data.total_memories ?? '—';
+      if (el2) el2.textContent = data.total_diaries ?? '—';
+      if (el3) el3.textContent = data.chat_sessions ?? '—';
+    }
+  } catch (e) {
+    console.warn('Dashboard load failed:', e);
+  }
+}
+
+// ── Agent 状态 ──
+async function loadAgentStatus() {
+  const container = document.getElementById('agentRows');
+  const statEl = document.getElementById('statAgent');
+  try {
+    const data = await apiGet('/api/v1/agent-status');
+    const isRunning = data.running || data.status === 'running' || data.status === 'ok';
+    // 更新仪表盘指示灯
+    if (statEl) {
+      statEl.innerHTML = isRunning
+        ? '<span class="dot dot-green"></span>在线'
+        : '<span class="dot dot-red"></span>离线';
+    }
+    // 渲染详情行
+    const rows = [
+      { label: '运行状态', value: isRunning ? '✅ 运行中' : '❌ 已停止' },
+      { label: '最后运行', value: data.last_run ? formatDateTime(data.last_run) : '—' },
+      { label: '下次运行', value: data.next_run ? formatDateTime(data.next_run) : '—' },
+      { label: '运行周期', value: data.interval || data.cron || '—' },
+      { label: '最近任务', value: data.last_task || data.last_action || '—' },
+    ];
+    container.innerHTML = rows.map(r =>
+      `<div class="agent-row"><span class="a-label">${r.label}</span><span class="a-value">${escapeHtml(String(r.value))}</span></div>`
+    ).join('');
+  } catch (e) {
+    if (statEl) statEl.innerHTML = '<span class="dot dot-red"></span>离线';
+    container.innerHTML = `<div style="text-align:center;padding:20px;color:var(--muted);font-size:.85rem;">⚠️ 无法获取 Agent 状态</div>`;
+  }
+}
+
+// ── 快速触发 ──
+async function fireTrigger(path, name, el) {
+  const statusEl = el.querySelector('.t-status');
+  el.classList.add('loading');
+  statusEl.textContent = '执行中…';
+  try {
+    const result = await apiPost(`/api/v1/${path}`, {});
+    statusEl.textContent = '✅ 完成';
+    showToast(`${name} 执行成功`, 'success');
+    // 如果有额外信息则显示
+    if (result && result.message) {
+      statusEl.textContent = `✅ ${result.message.slice(0, 20)}`;
+    }
+  } catch (e) {
+    statusEl.textContent = '❌ 失败';
+    showToast(`${name} 执行失败: ${e.message}`, 'error');
+  } finally {
+    el.classList.remove('loading');
+    setTimeout(() => { statusEl.textContent = ''; }, 4000);
+  }
+}
+
+// ── 天气 ──
+async function loadWeather() {
+  const iconEl = document.getElementById('wIcon');
+  const tempEl = document.getElementById('wTemp');
+  const descEl = document.getElementById('wDesc');
+  const cityEl = document.getElementById('wCity');
+  const detailEl = document.getElementById('wDetail');
+  try {
+    const city = localStorage.getItem('cangyv-weather-city') || '北京';
+    const data = await apiGet(`/api/v1/weather?city=${encodeURIComponent(city)}`);
+    if (data) {
+      const w = data.weather || data.current || data;
+      iconEl.textContent = weatherIcon(w.description || w.text || '');
+      tempEl.textContent = (w.temperature || w.temp || w.temperature_2m || '—') + '°C';
+      descEl.textContent = w.description || w.text || w.weather || '—';
+      cityEl.textContent = '📍 ' + (data.city || city);
+      const humidity = w.humidity || w.relative_humidity || '';
+      const wind = w.wind_speed || w.wind || '';
+      const feels = w.feels_like || w.apparent_temperature || '';
+      detailEl.innerHTML = [
+        humidity ? `💧 ${humidity}%` : '',
+        wind ? `💨 ${wind} m/s` : '',
+        feels ? `🌡 体感 ${feels}°C` : '',
+      ].filter(Boolean).join(' · ');
+    }
+  } catch (e) {
+    iconEl.textContent = '❌';
+    tempEl.textContent = '—';
+    descEl.textContent = '天气加载失败';
+    cityEl.textContent = '';
+    detailEl.innerHTML = '';
+  }
+}
+
+function weatherIcon(desc) {
+  if (!desc) return '🌤';
+  const d = desc.toLowerCase();
+  if (d.includes('晴')) return '☀️';
+  if (d.includes('云') || d.includes('阴') || d.includes('overcast')) return '☁️';
+  if (d.includes('雨')) return '🌧';
+  if (d.includes('雪')) return '❄️';
+  if (d.includes('雾') || d.includes('霾')) return '🌫';
+  if (d.includes('雷')) return '⛈';
+  if (d.includes('风')) return '💨';
+  return '🌤';
+}
+
+// ── Profile Cards ──
+let profileCards = [];
+
+async function loadProfileCards() {
+  const container = document.getElementById('profileList');
+  try {
+    const data = await apiGet('/api/v1/profile/cards');
+    profileCards = Array.isArray(data) ? data : (data.cards || []);
+    renderProfileCards();
+  } catch (e) {
+    container.innerHTML = `<div style="text-align:center;padding:20px;color:var(--muted);font-size:.85rem;">⚠️ 加载失败</div>`;
+  }
+}
+
+function renderProfileCards() {
+  const container = document.getElementById('profileList');
+  if (profileCards.length === 0) {
+    container.innerHTML = `<div style="text-align:center;padding:20px;color:var(--muted);font-size:.85rem;">暂无卡片，添加一个吧 ✨</div>`;
+    return;
+  }
+  container.innerHTML = profileCards.map(c => {
+    const key = escapeHtml(c.card_key || c.key || '');
+    const value = escapeHtml(c.card_value || c.value || '');
+    return `<div class="profile-item">
+      <span class="p-key">${key}</span>
+      <span class="p-value" title="${value}">${value}</span>
+      <div class="p-actions">
+        <button class="btn btn-ghost btn-sm" onclick="editCard('${key}')">编辑</button>
+        <button class="btn btn-danger btn-sm" onclick="deleteCard('${key}')">删除</button>
+      </div>
+    </div>`;
+  }).join('');
+}
+
+async function addCard() {
+  const keyInput = document.getElementById('newCardKey');
+  const valInput = document.getElementById('newCardValue');
+  const key = keyInput.value.trim();
+  const value = valInput.value.trim();
+  if (!key || !value) { showToast('请填写卡片键和值', 'error'); return; }
+  try {
+    await apiPost('/api/v1/profile/cards', { card_key: key, card_value: value });
+    showToast('卡片已添加', 'success');
+    keyInput.value = '';
+    valInput.value = '';
+    loadProfileCards();
+  } catch (e) {
+    showToast('添加失败: ' + e.message, 'error');
+  }
+}
+
+let editingCardKey = null;
+
+function editCard(key) {
+  const card = profileCards.find(c => (c.card_key || c.key) === key);
+  if (!card) return;
+  editingCardKey = key;
+  document.getElementById('cardModalTitle').textContent = '编辑卡片';
+  document.getElementById('editCardKey').value = key;
+  document.getElementById('editCardValue').value = card.card_value || card.value || '';
+  document.getElementById('cardModal').classList.add('active');
+}
+
+function closeCardModal() {
+  document.getElementById('cardModal').classList.remove('active');
+  editingCardKey = null;
+}
+
+async function saveCardEdit() {
+  if (!editingCardKey) return;
+  const value = document.getElementById('editCardValue').value.trim();
+  if (!value) { showToast('卡片值不能为空', 'error'); return; }
+  try {
+    await apiPut(`/api/v1/profile/cards/${encodeURIComponent(editingCardKey)}`, { card_value: value });
+    showToast('卡片已更新', 'success');
+    closeCardModal();
+    loadProfileCards();
+  } catch (e) {
+    showToast('更新失败: ' + e.message, 'error');
+  }
+}
+
+async function deleteCard(key) {
+  if (!confirm(`确定删除卡片「${key}」吗？`)) return;
+  try {
+    await apiDelete(`/api/v1/profile/cards/${encodeURIComponent(key)}`);
+    showToast('卡片已删除', 'success');
+    loadProfileCards();
+  } catch (e) {
+    showToast('删除失败: ' + e.message, 'error');
+  }
+}
+
+// ── DeployBot ──
+async function loadDeployBot() {
+  const dotEl = document.getElementById('deployDot');
+  const lastEl = document.getElementById('deployLast');
+  const statusEl = document.getElementById('deployStatus');
+  const commitEl = document.getElementById('deployCommit');
+  const healthEl = document.getElementById('deployHealth');
+
+  // 并行加载状态和健康检查
+  let statusData = null;
+  let healthData = null;
+
+  try { statusData = await apiGet('/api/v1/deploybot/status'); } catch (e) { /* ignore */ }
+  try { healthData = await apiGet('/api/v1/deploybot/health'); } catch (e) { /* ignore */ }
+
+  const isHealthy = healthData && (healthData.status === 'ok' || healthData.healthy === true);
+  const isDeploying = statusData && (statusData.deploying || statusData.status === 'deploying');
+
+  // 状态灯
+  if (isDeploying) {
+    dotEl.innerHTML = '<span class="dot" style="background:#f39c12;box-shadow:0 0 6px rgba(243,156,18,0.4)"></span> 部署中';
+  } else if (isHealthy) {
+    dotEl.innerHTML = '<span class="dot dot-green"></span> 健康';
+  } else {
+    dotEl.innerHTML = '<span class="dot dot-red"></span> 异常';
+  }
+
+  // 详情
+  if (statusData) {
+    lastEl.textContent = statusData.last_deploy ? formatDateTime(statusData.last_deploy) : '—';
+    statusEl.textContent = isDeploying ? '🔄 部署中' : (statusData.status || '空闲');
+    commitEl.textContent = statusData.commit || statusData.last_commit || '—';
+  }
+  if (healthData) {
+    healthEl.textContent = isHealthy ? '✅ 正常' : '❌ 异常';
+    if (healthData.uptime) healthEl.textContent += ` · ${healthData.uptime}`;
+  }
+}
+
+// ── 初始化 ──
+async function init() {
+  // 并行加载所有数据
+  await Promise.allSettled([
+    loadDashboard(),
+    loadAgentStatus(),
+    loadWeather(),
+    loadProfileCards(),
+    loadDeployBot(),
+  ]);
+}
+
+// 点击模态框外部关闭
+document.getElementById('cardModal').addEventListener('click', function(e) {
+  if (e.target === this) closeCardModal();
+});
+
+// 启动
+init();
+</script>
+</body>
+</html>

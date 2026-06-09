@@ -1,0 +1,821 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>苍聿居 · 记忆</title>
+<link rel="manifest" href="/manifest.json">
+<style>
+/* ── 全局样式 ── */
+*{margin:0;padding:0;box-sizing:border-box}
+:root{--bg:#fdf6f0;--card:rgba(255,255,255,0.75);--cardSolid:#fff;--text:#4a3728;--muted:#8b7355;--accent:#c08b72;--accentLight:rgba(192,139,114,0.12);--border:rgba(160,128,96,0.15);--shadow:rgba(160,128,96,0.08);--inputBg:rgba(255,255,255,0.6);--radius:12px;--radius-lg:16px;--nav-h:56px}
+html{font-size:16px;-webkit-text-size-adjust:100%}
+body{font-family:-apple-system,BlinkMacSystemFont,'Segoe UI','PingFang SC','Hiragino Sans GB','Microsoft YaHei',sans-serif;background:var(--bg);color:var(--text);min-height:100vh;padding-top:var(--nav-h);transition:background .3s,color .3s}
+a{color:var(--accent);text-decoration:none}
+button{cursor:pointer;font-family:inherit;border:none;background:none;color:inherit}
+input,textarea,select{font-family:inherit;font-size:inherit;color:var(--text);background:var(--inputBg);border:1px solid var(--border);border-radius:var(--radius);padding:10px 14px;outline:none;transition:border .2s}
+input:focus,textarea:focus,select:focus{border-color:var(--accent)}
+textarea{resize:vertical;min-height:80px}
+
+/* ── 导航栏 ── */
+.main-nav{position:fixed;top:0;left:0;right:0;height:var(--nav-h);background:var(--card);backdrop-filter:blur(20px);-webkit-backdrop-filter:blur(20px);border-bottom:1px solid var(--border);display:flex;align-items:center;padding:0 16px;z-index:1000;gap:8px}
+.nav-brand{font-size:1.15rem;font-weight:700;color:var(--accent);cursor:pointer;white-space:nowrap}
+.nav-links{display:flex;gap:2px;flex:1;justify-content:center;overflow-x:auto;scrollbar-width:none}
+.nav-links::-webkit-scrollbar{display:none}
+.nav-link{display:flex;align-items:center;gap:4px;padding:6px 12px;border-radius:var(--radius);font-size:.875rem;color:var(--muted);transition:all .2s;white-space:nowrap}
+.nav-link:hover{background:var(--accentLight);color:var(--accent)}
+.nav-link.active{background:var(--accentLight);color:var(--accent);font-weight:600}
+.nav-theme{font-size:1.1rem;padding:6px 8px;border-radius:var(--radius);transition:background .2s}
+.nav-theme:hover{background:var(--accentLight)}
+
+/* ── 页面容器 ── */
+.page-container{max-width:960px;margin:0 auto;padding:16px}
+
+/* ── 搜索栏 ── */
+.search-bar{position:relative;margin-bottom:16px}
+.search-bar input{width:100%;padding:12px 16px 12px 44px;border-radius:var(--radius-lg);font-size:.95rem;background:var(--card);backdrop-filter:blur(12px);-webkit-backdrop-filter:blur(12px);border:1px solid var(--border);transition:all .25s}
+.search-bar input:focus{border-color:var(--accent);box-shadow:0 0 0 3px var(--accentLight)}
+.search-icon{position:absolute;left:14px;top:50%;transform:translateY(-50%);font-size:1.1rem;pointer-events:none;color:var(--muted)}
+.search-clear{position:absolute;right:12px;top:50%;transform:translateY(-50%);font-size:.85rem;color:var(--muted);padding:4px 8px;border-radius:var(--radius);display:none;transition:background .2s}
+.search-clear:hover{background:var(--accentLight);color:var(--accent)}
+.search-clear.visible{display:block}
+
+/* ── 分类标签 ── */
+.category-tabs{display:flex;gap:6px;overflow-x:auto;scrollbar-width:none;padding-bottom:4px;margin-bottom:16px}
+.category-tabs::-webkit-scrollbar{display:none}
+.cat-tab{padding:6px 16px;border-radius:20px;font-size:.8rem;font-weight:500;color:var(--muted);background:var(--card);border:1px solid var(--border);white-space:nowrap;transition:all .2s;cursor:pointer;backdrop-filter:blur(8px);-webkit-backdrop-filter:blur(8px)}
+.cat-tab:hover{background:var(--accentLight);color:var(--accent);border-color:var(--accent)}
+.cat-tab.active{background:var(--accent);color:#fff;border-color:var(--accent)}
+
+/* ── 快捷操作 ── */
+.quick-actions{display:flex;gap:8px;margin-bottom:20px;flex-wrap:wrap}
+.quick-actions .btn{flex:1;min-width:100px}
+
+/* ── 按钮 ── */
+.btn{display:inline-flex;align-items:center;justify-content:center;gap:6px;padding:8px 18px;border-radius:var(--radius);font-size:.875rem;font-weight:500;transition:all .2s;cursor:pointer}
+.btn-primary{background:var(--accent);color:#fff}
+.btn-primary:hover{opacity:.9;transform:translateY(-1px)}
+.btn-ghost{background:var(--accentLight);color:var(--accent)}
+.btn-ghost:hover{background:var(--accent);color:#fff}
+.btn-sm{padding:5px 12px;font-size:.8rem}
+.btn-danger{background:#e74c3c;color:#fff}
+.btn-danger:hover{opacity:.9}
+.btn-icon{width:36px;height:36px;padding:0;border-radius:50%;display:inline-flex;align-items:center;justify-content:center;font-size:1rem;transition:all .2s}
+.btn-icon:hover{background:var(--accentLight)}
+
+/* ── 记忆卡片 ── */
+.memory-list{display:flex;flex-direction:column;gap:12px}
+.memory-card{background:var(--card);backdrop-filter:blur(12px);-webkit-backdrop-filter:blur(12px);border:1px solid var(--border);border-radius:var(--radius-lg);padding:16px;cursor:pointer;transition:all .25s;position:relative;overflow:hidden}
+.memory-card::before{content:'';position:absolute;top:0;left:0;width:4px;height:100%;background:var(--accent);opacity:0;transition:opacity .2s}
+.memory-card:hover{box-shadow:0 4px 24px var(--shadow);transform:translateY(-2px)}
+.memory-card:hover::before{opacity:1}
+.memory-card.unread{border-left:3px solid var(--accent)}
+.memory-card.unread::before{display:none}
+
+.card-header{display:flex;align-items:flex-start;justify-content:space-between;gap:8px;margin-bottom:8px}
+.card-content{font-size:.9rem;line-height:1.6;color:var(--text);display:-webkit-box;-webkit-line-clamp:3;-webkit-box-orient:vertical;overflow:hidden;margin-bottom:10px}
+.card-meta{display:flex;align-items:center;gap:8px;flex-wrap:wrap;font-size:.75rem;color:var(--muted)}
+.card-meta .tag{display:inline-block;padding:2px 8px;border-radius:20px;font-size:.7rem;background:var(--accentLight);color:var(--accent);font-weight:500}
+.card-meta .stars{color:#e8a838;letter-spacing:1px}
+.card-meta .time{margin-left:auto}
+.card-actions-inline{display:flex;gap:4px;align-items:center}
+.card-fav{font-size:1rem;opacity:.4;transition:all .2s}
+.card-fav.active{opacity:1}
+.card-fav:hover{transform:scale(1.2)}
+.card-read-dot{width:8px;height:8px;border-radius:50%;background:var(--accent);flex-shrink:0}
+.card-type-badge{font-size:.65rem;padding:2px 6px;border-radius:4px;background:var(--accentLight);color:var(--accent);font-weight:600;text-transform:uppercase}
+
+/* ── 加载更多 ── */
+.load-more{text-align:center;padding:24px;color:var(--muted);font-size:.85rem}
+.load-more .spinner{margin:0 auto 8px}
+.load-trigger{height:1px}
+
+/* ── 骨架屏 ── */
+.skeleton-card{background:var(--card);border:1px solid var(--border);border-radius:var(--radius-lg);padding:16px;margin-bottom:12px}
+.skeleton-line{height:14px;border-radius:6px;background:linear-gradient(90deg,var(--border) 25%,var(--accentLight) 50%,var(--border) 75%);background-size:200% 100%;animation:shimmer 1.5s infinite;margin-bottom:8px}
+.skeleton-line:last-child{margin-bottom:0;width:60%}
+.skeleton-line.short{width:40%}
+@keyframes shimmer{0%{background-position:200% 0}100%{background-position:-200% 0}}
+
+/* ── 空状态 ── */
+.empty-state{text-align:center;padding:60px 20px;color:var(--muted)}
+.empty-state .icon{font-size:3rem;margin-bottom:12px}
+.empty-state p{margin-bottom:16px}
+
+/* ── 模态框 ── */
+.modal-overlay{position:fixed;inset:0;background:rgba(0,0,0,0.4);backdrop-filter:blur(4px);-webkit-backdrop-filter:blur(4px);z-index:2000;display:flex;align-items:center;justify-content:center;opacity:0;transition:opacity .25s;pointer-events:none}
+.modal-overlay.active{opacity:1;pointer-events:auto}
+.modal{background:var(--cardSolid);border-radius:var(--radius-lg);padding:24px;width:90%;max-width:560px;max-height:85vh;overflow-y:auto;transform:scale(.95) translateY(10px);transition:transform .25s}
+.modal-overlay.active .modal{transform:scale(1) translateY(0)}
+.modal h2{margin-bottom:16px;font-size:1.2rem;display:flex;align-items:center;gap:8px}
+.modal-actions{display:flex;gap:8px;justify-content:flex-end;margin-top:20px}
+
+/* ── 详情模态框 ── */
+.detail-content{font-size:.95rem;line-height:1.8;white-space:pre-wrap;word-break:break-word;margin-bottom:16px;padding:16px;background:var(--accentLight);border-radius:var(--radius)}
+.detail-meta{display:flex;flex-wrap:wrap;gap:8px;margin-bottom:16px}
+.detail-meta .meta-item{display:flex;align-items:center;gap:4px;font-size:.8rem;color:var(--muted);padding:4px 10px;background:var(--card);border-radius:20px;border:1px solid var(--border)}
+.detail-actions{display:flex;gap:8px;flex-wrap:wrap;margin-bottom:20px;padding-bottom:16px;border-bottom:1px solid var(--border)}
+
+/* ── 评论区 ── */
+.comments-section h3{font-size:.95rem;margin-bottom:12px;color:var(--muted)}
+.comment-item{padding:10px 0;border-bottom:1px solid var(--border)}
+.comment-item:last-child{border-bottom:none}
+.comment-author{font-size:.8rem;font-weight:600;color:var(--accent);margin-bottom:2px}
+.comment-body{font-size:.85rem;line-height:1.5}
+.comment-time{font-size:.7rem;color:var(--muted);margin-top:2px}
+.comment-input-row{display:flex;gap:8px;margin-top:12px}
+.comment-input-row input{flex:1;padding:8px 12px;font-size:.85rem}
+.comment-input-row button{flex-shrink:0}
+
+/* ── 新建/编辑表单 ── */
+.form-group{margin-bottom:16px}
+.form-group label{display:block;font-size:.85rem;font-weight:500;margin-bottom:6px;color:var(--muted)}
+.form-group textarea{width:100%;min-height:120px}
+.form-group select{width:100%;padding:10px 14px}
+.form-group input[type="text"]{width:100%}
+.importance-slider{display:flex;align-items:center;gap:12px}
+.importance-slider input[type="range"]{flex:1;-webkit-appearance:none;height:6px;border-radius:3px;background:var(--border);outline:none;border:none;padding:0}
+.importance-slider input[type="range"]::-webkit-slider-thumb{-webkit-appearance:none;width:20px;height:20px;border-radius:50%;background:var(--accent);cursor:pointer;box-shadow:0 2px 6px var(--shadow)}
+.importance-slider input[type="range"]::-moz-range-thumb{width:20px;height:20px;border-radius:50%;background:var(--accent);cursor:pointer;border:none}
+.importance-value{font-size:1.1rem;font-weight:700;color:var(--accent);min-width:24px;text-align:center}
+.mem-type-group{display:flex;gap:8px}
+.mem-type-btn{padding:8px 20px;border-radius:var(--radius);font-size:.85rem;border:1px solid var(--border);transition:all .2s;background:var(--card)}
+.mem-type-btn.active{background:var(--accent);color:#fff;border-color:var(--accent)}
+.mem-type-btn:hover:not(.active){background:var(--accentLight)}
+
+/* ── Toast ── */
+.toast{position:fixed;bottom:80px;left:50%;transform:translateX(-50%) translateY(20px);padding:10px 24px;border-radius:var(--radius);font-size:.875rem;z-index:9999;opacity:0;transition:all .3s;pointer-events:none}
+.toast.show{opacity:1;transform:translateX(-50%) translateY(0)}
+.toast-info{background:var(--accent);color:#fff}
+.toast-error{background:#e74c3c;color:#fff}
+.toast-success{background:#27ae60;color:#fff}
+
+/* ── Spinner ── */
+.spinner{width:24px;height:24px;border:3px solid var(--border);border-top-color:var(--accent);border-radius:50%;animation:spin .8s linear infinite}
+@keyframes spin{to{transform:rotate(360deg)}}
+
+/* ── 搜索结果高亮 ── */
+.search-hint{text-align:center;padding:8px;font-size:.8rem;color:var(--muted);margin-bottom:8px}
+
+/* ── 响应式 ── */
+@media(max-width:768px){
+    .nav-label{display:none}
+    .nav-link{padding:6px 8px;font-size:1rem}
+    .page-container{padding:12px}
+    .modal{width:95%;padding:18px;max-height:90vh}
+    .quick-actions .btn{font-size:.8rem;padding:7px 12px}
+    .detail-actions{flex-wrap:wrap}
+}
+@media(min-width:769px){
+    .mobile-only{display:none!important}
+}
+@media(max-width:768px){
+    .desktop-only{display:none!important}
+}
+
+/* ── 入场动画 ── */
+@keyframes fadeUp{from{opacity:0;transform:translateY(12px)}to{opacity:1;transform:translateY(0)}}
+.fade-up{animation:fadeUp .35s ease-out both}
+</style>
+</head>
+<body>
+
+<!-- 导航栏 -->
+<div id="nav-container"></div>
+
+<!-- 主内容 -->
+<div class="page-container">
+    <!-- 搜索栏 -->
+    <div class="search-bar">
+        <span class="search-icon">🔍</span>
+        <input type="text" id="searchInput" placeholder="语义搜索记忆..." autocomplete="off">
+        <button class="search-clear" id="searchClear" onclick="clearSearch()">✕</button>
+    </div>
+
+    <!-- 分类标签 -->
+    <div class="category-tabs" id="categoryTabs"></div>
+
+    <!-- 快捷操作 -->
+    <div class="quick-actions">
+        <button class="btn btn-primary" onclick="openNewModal()">✏️ 新建记忆</button>
+        <button class="btn btn-ghost" onclick="floatMemory()">🎲 随机漂浮</button>
+        <button class="btn btn-ghost" onclick="wakeupMemory()">🔔 主动唤醒</button>
+    </div>
+
+    <!-- 搜索提示 -->
+    <div class="search-hint" id="searchHint" style="display:none"></div>
+
+    <!-- 记忆列表 -->
+    <div class="memory-list" id="memoryList"></div>
+
+    <!-- 加载更多 -->
+    <div class="load-more" id="loadMore" style="display:none">
+        <div class="spinner"></div>
+        <span>加载中...</span>
+    </div>
+
+    <!-- 无限滚动触发器 -->
+    <div class="load-trigger" id="loadTrigger"></div>
+</div>
+
+<!-- 详情模态框 -->
+<div class="modal-overlay" id="detailModal">
+    <div class="modal">
+        <h2 id="detailTitle">📝 记忆详情</h2>
+        <div class="detail-content" id="detailContent"></div>
+        <div class="detail-meta" id="detailMeta"></div>
+        <div class="detail-actions" id="detailActions"></div>
+        <div class="comments-section">
+            <h3>💬 评论</h3>
+            <div id="commentsList"></div>
+            <div class="comment-input-row">
+                <input type="text" id="commentInput" placeholder="写下你的想法..." maxlength="500">
+                <button class="btn btn-primary btn-sm" onclick="submitComment()">发送</button>
+            </div>
+        </div>
+        <div class="modal-actions">
+            <button class="btn btn-ghost" onclick="closeDetailModal()">关闭</button>
+        </div>
+    </div>
+</div>
+
+<!-- 新建/编辑模态框 -->
+<div class="modal-overlay" id="editModal">
+    <div class="modal">
+        <h2 id="editModalTitle">✏️ 新建记忆</h2>
+        <div class="form-group">
+            <label>内容</label>
+            <textarea id="editContent" placeholder="记录你想记住的一切..."></textarea>
+        </div>
+        <div class="form-group">
+            <label>分类</label>
+            <select id="editCategory">
+                <option value="">未分类</option>
+                <option value="技术">技术</option>
+                <option value="生活">生活</option>
+                <option value="情感">情感</option>
+                <option value="约定">约定</option>
+                <option value="灵感">灵感</option>
+                <option value="日程">日程</option>
+                <option value="习惯">习惯</option>
+                <option value="其他">其他</option>
+            </select>
+        </div>
+        <div class="form-group">
+            <label>重要性 <span class="importance-value" id="importanceDisplay">3</span></label>
+            <div class="importance-slider">
+                <input type="range" id="editImportance" min="1" max="5" value="3" oninput="document.getElementById('importanceDisplay').textContent=this.value">
+            </div>
+        </div>
+        <div class="form-group">
+            <label>标签（逗号分隔）</label>
+            <input type="text" id="editTags" placeholder="如：Python, 算法, 学习">
+        </div>
+        <div class="form-group">
+            <label>记忆类型</label>
+            <div class="mem-type-group">
+                <button class="mem-type-btn active" data-type="anchor" onclick="selectMemType(this)">⚓ 锚点</button>
+                <button class="mem-type-btn" data-type="float" onclick="selectMemType(this)">🎈 漂浮</button>
+            </div>
+        </div>
+        <div class="modal-actions">
+            <button class="btn btn-ghost" onclick="closeEditModal()">取消</button>
+            <button class="btn btn-primary" id="editSubmitBtn" onclick="submitMemory()">保存</button>
+        </div>
+    </div>
+</div>
+
+<!-- 共享库 -->
+<script src="/common.js"></script>
+
+<script>
+// ── 状态管理 ──
+const CATEGORIES = ['全部', '技术', '生活', '情感', '约定', '灵感', '日程', '习惯', '其他'];
+let state = {
+    memories: [],
+    category: '',
+    searchQuery: '',
+    offset: 0,
+    limit: 20,
+    loading: false,
+    hasMore: true,
+    editingId: null,       // null=新建, 有值=编辑
+    currentDetailId: null,
+    searchMode: false,
+    selectedMemType: 'anchor',
+};
+
+// ── 初始化 ──
+document.addEventListener('DOMContentLoaded', () => {
+    initTheme();
+    renderNavAndTabs();
+    loadMemories(true);
+    setupInfiniteScroll();
+    setupSearchDebounce();
+});
+
+function renderNavAndTabs() {
+    // 导航栏
+    document.getElementById('nav-container').innerHTML = renderNav('index');
+
+    // 分类标签
+    const tabsHtml = CATEGORIES.map(c =>
+        `<button class="cat-tab ${c === '全部' ? 'active' : ''}" data-cat="${c === '全部' ? '' : c}" onclick="switchCategory(this)">${c}</button>`
+    ).join('');
+    document.getElementById('categoryTabs').innerHTML = tabsHtml;
+}
+
+// ── 加载记忆列表 ──
+async function loadMemories(reset = false) {
+    if (state.loading) return;
+    if (!reset && !state.hasMore) return;
+
+    state.loading = true;
+
+    if (reset) {
+        state.offset = 0;
+        state.hasMore = true;
+        state.memories = [];
+        document.getElementById('memoryList').innerHTML = renderSkeletons(3);
+    }
+
+    showLoadMore(true);
+
+    try {
+        let data;
+        if (state.searchMode && state.searchQuery) {
+            // 语义搜索
+            data = await apiPost('/api/v1/memories/search', {
+                query: state.searchQuery,
+                category: state.category || undefined,
+                limit: state.limit,
+                min_similarity: 0.3,
+            });
+            // 搜索返回的可能是 {results: [...]} 或直接是数组
+            const items = Array.isArray(data) ? data : (data.results || data.memories || []);
+            state.memories = reset ? items : [...state.memories, ...items];
+            state.hasMore = false; // 搜索结果不分页
+        } else {
+            const params = new URLSearchParams();
+            if (state.category) params.set('category', state.category);
+            params.set('limit', state.limit);
+            params.set('offset', state.offset);
+            data = await apiGet(`/api/v1/memories?${params}`);
+            const items = Array.isArray(data) ? data : (data.memories || data.items || data.results || []);
+            state.memories = reset ? items : [...state.memories, ...items];
+            state.hasMore = items.length >= state.limit;
+            state.offset += items.length;
+        }
+
+        renderMemoryList();
+    } catch (err) {
+        console.error('加载记忆失败:', err);
+        if (reset) {
+            document.getElementById('memoryList').innerHTML =
+                `<div class="empty-state"><div class="icon">😵</div><p>加载失败：${escapeHtml(err.message)}</p><button class="btn btn-ghost" onclick="loadMemories(true)">重试</button></div>`;
+        } else {
+            showToast('加载更多失败', 'error');
+        }
+    } finally {
+        state.loading = false;
+        showLoadMore(false);
+    }
+}
+
+// ── 渲染记忆列表 ──
+function renderMemoryList() {
+    const list = document.getElementById('memoryList');
+
+    if (state.memories.length === 0) {
+        list.innerHTML = `<div class="empty-state"><div class="icon">🧠</div><p>${state.searchMode ? '没有找到相关记忆' : '还没有记忆，开始记录吧'}</p>${!state.searchMode ? '<button class="btn btn-primary" onclick="openNewModal()">✏️ 新建记忆</button>' : ''}</div>`;
+        return;
+    }
+
+    list.innerHTML = state.memories.map((m, i) => renderMemoryCard(m, i)).join('');
+}
+
+function renderMemoryCard(m, index) {
+    const stars = '★'.repeat(m.importance || 0) + '☆'.repeat(5 - (m.importance || 0));
+    const preview = m.content || m.summary || '';
+    const isUnread = m.read_by_user === false;
+    const tags = (m.tags || []).map(t => `<span class="tag">${escapeHtml(t)}</span>`).join('');
+    const timeStr = formatTime(m.created_at);
+    const favClass = m.favorite ? 'active' : '';
+    const favIcon = m.favorite ? '❤️' : '🤍';
+    const typeBadge = m.mem_type === 'float' ? '<span class="card-type-badge">🎈 漂浮</span>' : '';
+
+    return `<div class="memory-card fade-up ${isUnread ? 'unread' : ''}" style="animation-delay:${Math.min(index * 0.05, 0.5)}s" onclick="openDetail(${m.id})">
+        <div class="card-header">
+            <div style="flex:1;min-width:0">
+                <div class="card-content">${escapeHtml(preview)}</div>
+            </div>
+            <div class="card-actions-inline">
+                ${isUnread ? '<span class="card-read-dot" title="未读"></span>' : ''}
+                <span class="card-fav ${favClass}" onclick="event.stopPropagation();toggleFavorite(${m.id},${m.favorite})">${favIcon}</span>
+            </div>
+        </div>
+        <div class="card-meta">
+            ${m.category ? `<span class="tag">${escapeHtml(m.category)}</span>` : ''}
+            ${tags}
+            ${typeBadge}
+            <span class="stars">${stars}</span>
+            <span class="time">${timeStr}</span>
+        </div>
+    </div>`;
+}
+
+function renderSkeletons(count) {
+    return Array.from({length: count}, () =>
+        `<div class="skeleton-card"><div class="skeleton-line" style="width:90%"></div><div class="skeleton-line" style="width:70%"></div><div class="skeleton-line short"></div></div>`
+    ).join('');
+}
+
+// ── 分类切换 ──
+function switchCategory(btn) {
+    const cat = btn.dataset.cat;
+    state.category = cat;
+    state.searchMode = false;
+    state.searchQuery = '';
+    document.getElementById('searchInput').value = '';
+    document.getElementById('searchClear').classList.remove('visible');
+    document.getElementById('searchHint').style.display = 'none';
+
+    // 更新标签样式
+    document.querySelectorAll('.cat-tab').forEach(t => t.classList.remove('active'));
+    btn.classList.add('active');
+
+    loadMemories(true);
+}
+
+// ── 搜索 ──
+let searchTimer = null;
+function setupSearchDebounce() {
+    const input = document.getElementById('searchInput');
+    input.addEventListener('input', () => {
+        const val = input.value.trim();
+        document.getElementById('searchClear').classList.toggle('visible', val.length > 0);
+
+        clearTimeout(searchTimer);
+        searchTimer = setTimeout(() => {
+            if (val.length >= 2) {
+                state.searchQuery = val;
+                state.searchMode = true;
+                document.getElementById('searchHint').style.display = 'block';
+                document.getElementById('searchHint').textContent = `🔍 语义搜索："${val}"`;
+                loadMemories(true);
+            } else if (val.length === 0) {
+                clearSearch();
+            }
+        }, 400);
+    });
+
+    input.addEventListener('keydown', (e) => {
+        if (e.key === 'Enter') {
+            clearTimeout(searchTimer);
+            const val = input.value.trim();
+            if (val.length >= 2) {
+                state.searchQuery = val;
+                state.searchMode = true;
+                document.getElementById('searchHint').style.display = 'block';
+                document.getElementById('searchHint').textContent = `🔍 语义搜索："${val}"`;
+                loadMemories(true);
+            }
+        }
+    });
+}
+
+function clearSearch() {
+    state.searchQuery = '';
+    state.searchMode = false;
+    document.getElementById('searchInput').value = '';
+    document.getElementById('searchClear').classList.remove('visible');
+    document.getElementById('searchHint').style.display = 'none';
+    loadMemories(true);
+}
+
+// ── 无限滚动 ──
+function setupInfiniteScroll() {
+    const observer = new IntersectionObserver((entries) => {
+        if (entries[0].isIntersecting && !state.loading && state.hasMore && !state.searchMode) {
+            loadMemories(false);
+        }
+    }, { rootMargin: '200px' });
+    observer.observe(document.getElementById('loadTrigger'));
+}
+
+function showLoadMore(show) {
+    document.getElementById('loadMore').style.display = show ? 'block' : 'none';
+}
+
+// ── 快捷操作 ──
+async function floatMemory() {
+    try {
+        showToast('🎲 正在打捞漂浮记忆...', 'info');
+        const data = await apiGet('/api/v1/memories/float');
+        const mem = Array.isArray(data) ? data[0] : (data.memory || data);
+        if (mem && mem.id) {
+            openDetail(mem.id);
+        } else {
+            showToast('暂时没有漂浮的记忆', 'info');
+        }
+    } catch (err) {
+        showToast('获取漂浮记忆失败：' + err.message, 'error');
+    }
+}
+
+async function wakeupMemory() {
+    try {
+        showToast('🔔 正在唤醒记忆...', 'info');
+        const data = await apiGet('/api/v1/memories/wakeup');
+        const items = Array.isArray(data) ? data : (data.memories || data.results || []);
+        if (items.length > 0) {
+            // 把唤醒的记忆插入列表顶部
+            state.memories = [...items, ...state.memories];
+            renderMemoryList();
+            showToast(`唤醒了 ${items.length} 条记忆`, 'success');
+        } else {
+            showToast('没有需要唤醒的记忆', 'info');
+        }
+    } catch (err) {
+        showToast('唤醒失败：' + err.message, 'error');
+    }
+}
+
+// ── 收藏切换 ──
+async function toggleFavorite(id, currentFav) {
+    try {
+        await apiPut(`/api/v1/memories/${id}`, { favorite: !currentFav });
+        const mem = state.memories.find(m => m.id === id);
+        if (mem) mem.favorite = !currentFav;
+        renderMemoryList();
+        showToast(currentFav ? '已取消收藏' : '已收藏', 'success');
+    } catch (err) {
+        showToast('操作失败', 'error');
+    }
+}
+
+// ── 详情模态框 ──
+async function openDetail(id) {
+    state.currentDetailId = id;
+    const overlay = document.getElementById('detailModal');
+    overlay.classList.add('active');
+    document.body.style.overflow = 'hidden';
+
+    // 先标记已读
+    try { await apiPost(`/api/v1/memories/${id}/mark-read`, {}); } catch(e) {}
+    // 更新列表中的已读状态
+    const mem = state.memories.find(m => m.id === id);
+    if (mem) { mem.read_by_user = true; renderMemoryList(); }
+
+    // 加载详情
+    try {
+        const data = await apiGet(`/api/v1/memories/${id}`);
+        const m = data.memory || data;
+        renderDetailContent(m);
+        loadComments(id);
+    } catch (err) {
+        document.getElementById('detailContent').innerHTML = `<p style="color:var(--muted)">加载失败：${escapeHtml(err.message)}</p>`;
+    }
+}
+
+function renderDetailContent(m) {
+    const stars = '★'.repeat(m.importance || 0) + '☆'.repeat(5 - (m.importance || 0));
+    const tags = (m.tags || []).map(t => `<span class="tag">${escapeHtml(t)}</span>`).join(' ');
+
+    document.getElementById('detailContent').textContent = m.content || '';
+
+    document.getElementById('detailMeta').innerHTML = `
+        ${m.category ? `<div class="meta-item">📂 ${escapeHtml(m.category)}</div>` : ''}
+        <div class="meta-item">⭐ ${stars}</div>
+        ${m.mem_type ? `<div class="meta-item">${m.mem_type === 'float' ? '🎈 漂浮' : '⚓ 锚点'}</div>` : ''}
+        ${tags ? `<div class="meta-item">${tags}</div>` : ''}
+        <div class="meta-item">👁 ${m.access_count || 0}次访问</div>
+        <div class="meta-item">📅 ${formatDateTime(m.created_at)}</div>
+        ${m.updated_at && m.updated_at !== m.created_at ? `<div class="meta-item">✏️ 更新于 ${formatDateTime(m.updated_at)}</div>` : ''}
+        ${m.last_accessed ? `<div class="meta-item">🕐 最近访问 ${formatTime(m.last_accessed)}</div>` : ''}
+    `;
+
+    document.getElementById('detailActions').innerHTML = `
+        <button class="btn btn-ghost btn-sm" onclick="toggleFavorite(${m.id},${m.favorite})">${m.favorite ? '❤️ 取消收藏' : '🤍 收藏'}</button>
+        <button class="btn btn-ghost btn-sm" onclick="toggleArchive(${m.id},${m.archived})">${m.archived ? '📤 取消归档' : '📥 归档'}</button>
+        <button class="btn btn-ghost btn-sm" onclick="openEditFromDetail(${m.id})">✏️ 编辑</button>
+        <button class="btn btn-danger btn-sm" onclick="deleteMemory(${m.id})">🗑 删除</button>
+    `;
+}
+
+function closeDetailModal() {
+    document.getElementById('detailModal').classList.remove('active');
+    document.body.style.overflow = '';
+    state.currentDetailId = null;
+}
+
+// ── 归档 ──
+async function toggleArchive(id, currentArchived) {
+    try {
+        await apiPut(`/api/v1/memories/${id}`, { archived: !currentArchived });
+        showToast(currentArchived ? '已取消归档' : '已归档', 'success');
+        // 刷新详情
+        const data = await apiGet(`/api/v1/memories/${id}`);
+        renderDetailContent(data.memory || data);
+        // 从列表中移除归档的记忆
+        if (!currentArchived) {
+            state.memories = state.memories.filter(m => m.id !== id);
+            renderMemoryList();
+        }
+    } catch (err) {
+        showToast('操作失败', 'error');
+    }
+}
+
+// ── 删除 ──
+async function deleteMemory(id) {
+    if (!confirm('确定要删除这条记忆吗？此操作不可恢复。')) return;
+    try {
+        await apiDelete(`/api/v1/memories/${id}`);
+        showToast('已删除', 'success');
+        closeDetailModal();
+        state.memories = state.memories.filter(m => m.id !== id);
+        renderMemoryList();
+    } catch (err) {
+        showToast('删除失败：' + err.message, 'error');
+    }
+}
+
+// ── 评论 ──
+async function loadComments(id) {
+    try {
+        const data = await apiGet(`/api/v1/memories/${id}/comments`);
+        const comments = Array.isArray(data) ? data : (data.comments || []);
+        renderComments(comments);
+    } catch (err) {
+        document.getElementById('commentsList').innerHTML = '<p style="color:var(--muted);font-size:.8rem">评论加载失败</p>';
+    }
+}
+
+function renderComments(comments) {
+    if (!comments.length) {
+        document.getElementById('commentsList').innerHTML = '<p style="color:var(--muted);font-size:.8rem;padding:8px 0">暂无评论</p>';
+        return;
+    }
+    document.getElementById('commentsList').innerHTML = comments.map(c => `
+        <div class="comment-item">
+            <div class="comment-author">${escapeHtml(c.author || '匿名')}</div>
+            <div class="comment-body">${escapeHtml(c.content)}</div>
+            <div class="comment-time">${formatTime(c.created_at)}</div>
+        </div>
+    `).join('');
+}
+
+async function submitComment() {
+    const input = document.getElementById('commentInput');
+    const content = input.value.trim();
+    if (!content) return;
+    if (!state.currentDetailId) return;
+
+    try {
+        await apiPost(`/api/v1/memories/${state.currentDetailId}/comments`, {
+            author: '我',
+            content: content,
+        });
+        input.value = '';
+        loadComments(state.currentDetailId);
+        showToast('评论已发送', 'success');
+    } catch (err) {
+        showToast('评论失败：' + err.message, 'error');
+    }
+}
+
+// ── 新建/编辑模态框 ──
+function openNewModal() {
+    state.editingId = null;
+    document.getElementById('editModalTitle').innerHTML = '✏️ 新建记忆';
+    document.getElementById('editContent').value = '';
+    document.getElementById('editCategory').value = state.category || '';
+    document.getElementById('editImportance').value = 3;
+    document.getElementById('importanceDisplay').textContent = '3';
+    document.getElementById('editTags').value = '';
+    state.selectedMemType = 'anchor';
+    updateMemTypeButtons();
+    document.getElementById('editSubmitBtn').textContent = '保存';
+    openModal('editModal');
+}
+
+async function openEditFromDetail(id) {
+    try {
+        const data = await apiGet(`/api/v1/memories/${id}`);
+        const m = data.memory || data;
+        state.editingId = id;
+        document.getElementById('editModalTitle').innerHTML = '✏️ 编辑记忆';
+        document.getElementById('editContent').value = m.content || '';
+        document.getElementById('editCategory').value = m.category || '';
+        document.getElementById('editImportance').value = m.importance || 3;
+        document.getElementById('importanceDisplay').textContent = m.importance || 3;
+        document.getElementById('editTags').value = (m.tags || []).join(', ');
+        state.selectedMemType = m.mem_type || 'anchor';
+        updateMemTypeButtons();
+        document.getElementById('editSubmitBtn').textContent = '更新';
+        openModal('editModal');
+    } catch (err) {
+        showToast('加载记忆失败', 'error');
+    }
+}
+
+function closeEditModal() {
+    closeModal('editModal');
+}
+
+function selectMemType(btn) {
+    state.selectedMemType = btn.dataset.type;
+    updateMemTypeButtons();
+}
+
+function updateMemTypeButtons() {
+    document.querySelectorAll('.mem-type-btn').forEach(b => {
+        b.classList.toggle('active', b.dataset.type === state.selectedMemType);
+    });
+}
+
+async function submitMemory() {
+    const content = document.getElementById('editContent').value.trim();
+    if (!content) {
+        showToast('请输入记忆内容', 'error');
+        return;
+    }
+
+    const category = document.getElementById('editCategory').value || undefined;
+    const importance = parseInt(document.getElementById('editImportance').value) || 3;
+    const tagsStr = document.getElementById('editTags').value.trim();
+    const tags = tagsStr ? tagsStr.split(/[,，]/).map(t => t.trim()).filter(Boolean) : undefined;
+
+    const body = {
+        content,
+        category,
+        importance,
+        tags,
+        mem_type: state.selectedMemType,
+    };
+
+    try {
+        if (state.editingId) {
+            await apiPut(`/api/v1/memories/${state.editingId}`, body);
+            showToast('记忆已更新', 'success');
+        } else {
+            await apiPost('/api/v1/memories', body);
+            showToast('记忆已创建', 'success');
+        }
+        closeEditModal();
+        // 如果详情模态框打开，也刷新它
+        if (state.currentDetailId === state.editingId) {
+            const data = await apiGet(`/api/v1/memories/${state.currentDetailId}`);
+            renderDetailContent(data.memory || data);
+        }
+        loadMemories(true);
+    } catch (err) {
+        showToast('保存失败：' + err.message, 'error');
+    }
+}
+
+// ── 模态框通用 ──
+function openModal(id) {
+    document.getElementById(id).classList.add('active');
+    document.body.style.overflow = 'hidden';
+}
+
+function closeModal(id) {
+    document.getElementById(id).classList.remove('active');
+    // 如果没有其他模态框打开，恢复滚动
+    const anyOpen = document.querySelector('.modal-overlay.active');
+    if (!anyOpen) document.body.style.overflow = '';
+}
+
+// 点击遮罩关闭
+document.addEventListener('click', (e) => {
+    if (e.target.classList.contains('modal-overlay')) {
+        e.target.classList.remove('active');
+        const anyOpen = document.querySelector('.modal-overlay.active');
+        if (!anyOpen) document.body.style.overflow = '';
+        if (e.target.id === 'detailModal') state.currentDetailId = null;
+    }
+});
+
+// ESC 关闭模态框
+document.addEventListener('keydown', (e) => {
+    if (e.key === 'Escape') {
+        document.querySelectorAll('.modal-overlay.active').forEach(m => {
+            m.classList.remove('active');
+            if (m.id === 'detailModal') state.currentDetailId = null;
+        });
+        document.body.style.overflow = '';
+    }
+});
+
+// 评论输入回车发送
+document.getElementById('commentInput').addEventListener('keydown', (e) => {
+    if (e.key === 'Enter' && !e.shiftKey) {
+        e.preventDefault();
+        submitComment();
+    }
+});
+</script>
+</body>
+</html>
