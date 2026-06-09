@@ -41,7 +41,7 @@ textarea{resize:vertical;min-height:80px}
 .search-clear.visible{display:block}
 
 /* ── 分类标签 ── */
-.category-tabs{display:flex;gap:6px;overflow-x:auto;scrollbar-width:none;padding-bottom:4px;margin-bottom:16px}
+.category-tabs{display:flex;gap:6px;overflow-x:auto;scrollbar-width:none;padding-bottom:4px;margin-bottom:16px;min-width:0;width:0;flex:1 1 100%}
 .category-tabs::-webkit-scrollbar{display:none}
 .cat-tab{padding:6px 16px;border-radius:20px;font-size:.8rem;font-weight:500;color:var(--muted);background:var(--card);border:1px solid var(--border);white-space:nowrap;transition:all .2s;cursor:pointer;backdrop-filter:blur(8px);-webkit-backdrop-filter:blur(8px)}
 .cat-tab:hover{background:var(--accentLight);color:var(--accent);border-color:var(--accent)}
@@ -202,7 +202,7 @@ textarea{resize:vertical;min-height:80px}
     </div>
 
     <!-- 分类标签 + 状态筛选 -->
-    <div style="display:flex;align-items:center;gap:8px;margin-bottom:16px">
+    <div style="display:flex;align-items:center;gap:8px;margin-bottom:16px;width:100%;overflow:hidden">
         <div class="category-tabs" id="categoryTabs" style="flex:1"></div>
         <div style="position:relative">
             <button class="status-filter-btn" onclick="toggleStatusDropdown()">
