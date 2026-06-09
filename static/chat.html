@@ -539,15 +539,15 @@ function renderSessionList() {
     const isActive = currentSession && currentSession.id === s.id;
     const title = escapeHtml(s.title || s.session_key || '未命名');
     const time = formatTime(s.updated_at);
-    return `<div class="session-item ${isActive ? 'active' : ''}" onclick="selectSession(${s.id})" data-id="${s.id}">
+    return `<div class="session-item ${isActive ? 'active' : ''}" onclick="selectSession('${s.session_key}')" data-id="${s.id}">
       <span class="session-icon">💬</span>
       <div class="session-info">
         <div class="session-title">${title}</div>
         <div class="session-time">${time}</div>
       </div>
       <div class="session-actions">
-        <button class="session-action-btn" onclick="event.stopPropagation();openRenameModal(${s.id},'${escapeHtml(s.title || s.session_key || '')}')" title="重命名">✏️</button>
-        <button class="session-action-btn danger" onclick="event.stopPropagation();openDeleteModal(${s.id})" title="删除">🗑️</button>
+        <button class="session-action-btn" onclick="event.stopPropagation();openRenameModal('${s.session_key}','${escapeHtml(s.title || s.session_key || '')}')" title="重命名">✏️</button>
+        <button class="session-action-btn danger" onclick="event.stopPropagation();openDeleteModal('${s.session_key}')" title="删除">🗑️</button>
       </div>
     </div>`;
   }).join('');
@@ -560,7 +560,7 @@ async function createNewSession() {
     const session = await apiPost('/api/v1/sessions', { session_key: key, title });
     sessions.push(session);
     renderSessionList();
-    await selectSession(session.id);
+    await selectSession(session.session_key);
     showToast('已创建新会话', 'success');
   } catch (e) {
     console.error('创建会话失败:', e);
@@ -570,8 +570,9 @@ async function createNewSession() {
 
 async function selectSession(id) {
   try {
-    currentSession = await apiGet(`/api/v1/sessions/${id}`);
-    currentMessages = await apiGet(`/api/v1/sessions/${id}/messages`);
+    const targetKey = typeof id === 'object' ? id.session_key : id;
+    currentSession = await apiGet(`/api/v1/sessions/${targetKey}`);
+    currentMessages = await apiGet(`/api/v1/sessions/${targetKey}/messages`);
     renderSessionList();
     renderChatHeader();
     renderMessages();
