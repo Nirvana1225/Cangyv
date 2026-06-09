@@ -882,6 +882,8 @@ function closeLockModal() {
 }
 
 async function submitLock() {
+    if (lockTargetId) { await submitDiaryLock(); return; }
+
     const password = $('#lock-password').value.trim();
     if (!password) {
         showToast('请输入密码', 'error');
@@ -903,6 +905,7 @@ async function submitLock() {
         showToast('操作失败: ' + e.message, 'error');
     }
 }
+
 
 // ── 模态框点击遮罩关闭 ──
 document.addEventListener('click', (e) => {
