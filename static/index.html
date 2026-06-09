@@ -519,8 +519,8 @@ function showLoadMore(show) {
 async function floatMemory() {
     try {
         showToast('🎲 正在打捞漂浮记忆...', 'info');
-        const data = await apiGet('/api/v1/memories/float');
-        const mem = Array.isArray(data) ? data[0] : (data.memory || data);
+        const data = await apiGet('/api/v1/memories/surface');
+        const mem = Array.isArray(data) ? data[0] : (data.random_floating ? data.random_floating[0] : (data.memory || data));
         if (mem && mem.id) {
             openDetail(mem.id);
         } else {
@@ -570,7 +570,7 @@ async function openDetail(id) {
     document.body.style.overflow = 'hidden';
 
     // 先标记已读
-    try { await apiPost(`/api/v1/memories/${id}/mark-read`, {}); } catch(e) {}
+    try { await apiPost(`/api/v1/memories/${id}/read`, { who: 'user' }); } catch(e) {}
     // 更新列表中的已读状态
     const mem = state.memories.find(m => m.id === id);
     if (mem) { mem.read_by_user = true; renderMemoryList(); }
