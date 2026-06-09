@@ -126,6 +126,13 @@
 .diary-card:hover::before {
     background: var(--accent);
 }
+.diary-card.expanded {
+    border-color: var(--accent);
+    box-shadow: 0 4px 24px var(--shadow);
+}
+.diary-card.expanded::before {
+    background: var(--accent);
+}
 
 /* 卡片头部 */
 .diary-card-header {
@@ -171,6 +178,14 @@
     color: var(--text);
     word-break: break-word;
     white-space: pre-wrap;
+}
+
+/* 已加密遮罩 */
+.diary-locked-overlay {
+    text-align: center;
+    padding: 20px 0;
+    color: var(--muted);
+    font-size: .9rem;
 }
 
 /* 卡片操作栏 */
@@ -399,18 +414,16 @@
     height: 14px;
     border-radius: 8px;
     margin-bottom: 10px;
+    background: linear-gradient(90deg, var(--border) 25%, var(--accentLight) 50%, var(--border) 75%);
+    background-size: 200% 100%;
+    animation: shimmer 1.5s infinite;
 }
 .skeleton-line.short { width: 40%; }
 .skeleton-line.medium { width: 70%; }
 .skeleton-line.long { width: 95%; }
-
-/* ── 展开动画 ── */
-.diary-card.expanded {
-    border-color: var(--accent);
-    box-shadow: 0 4px 24px var(--shadow);
-}
-.diary-card.expanded::before {
-    background: var(--accent);
+@keyframes shimmer {
+    0% { background-position: 200% 0; }
+    100% { background-position: -200% 0; }
 }
 
 /* ── 响应式 ── */
@@ -459,18 +472,18 @@
     <!-- 加载骨架 -->
     <div id="skeleton-container" class="timeline">
         <div class="skeleton-card">
-            <div class="skeleton-line short skeleton"></div>
-            <div class="skeleton-line long skeleton"></div>
-            <div class="skeleton-line medium skeleton"></div>
+            <div class="skeleton-line short"></div>
+            <div class="skeleton-line long"></div>
+            <div class="skeleton-line medium"></div>
         </div>
         <div class="skeleton-card">
-            <div class="skeleton-line short skeleton"></div>
-            <div class="skeleton-line long skeleton"></div>
-            <div class="skeleton-line medium skeleton"></div>
+            <div class="skeleton-line short"></div>
+            <div class="skeleton-line long"></div>
+            <div class="skeleton-line medium"></div>
         </div>
         <div class="skeleton-card">
-            <div class="skeleton-line short skeleton"></div>
-            <div class="skeleton-line long skeleton"></div>
+            <div class="skeleton-line short"></div>
+            <div class="skeleton-line long"></div>
         </div>
     </div>
 
@@ -563,7 +576,6 @@ let lockAction = null;
 
 // ── 初始化 ──
 document.addEventListener('DOMContentLoaded', () => {
-    // 注入全局CSS
     const globalStyle = document.getElementById('global-css');
     if (globalStyle && typeof GLOBAL_CSS !== 'undefined') {
         globalStyle.textContent = GLOBAL_CSS;
@@ -574,12 +586,18 @@ document.addEventListener('DOMContentLoaded', () => {
     loadDiaries();
 });
 
+// ── 判断日记是否处于加密锁定状态 ──
+// 兼容后端可能返回 locked 或 is_locked 字段
+function isDiaryLocked(d) {
+    return d.locked === true || d.is_locked === true;
+}
+
 // ── 加载日记列表 ──
 async function loadDiaries() {
     try {
         const data = await apiGet('/api/v1/diary?limit=100&offset=0');
         diaries = Array.isArray(data) ? data : (data.items || data.diaries || []);
-        isLocked = diaries.length > 0 && diaries.some(d => d.is_locked);
+        isLocked = diaries.length > 0 && diaries.some(d => isDiaryLocked(d));
         renderDiaries();
     } catch (e) {
         showToast('加载日记失败: ' + e.message, 'error');
@@ -615,8 +633,8 @@ function renderDiaries() {
 
     let html = '';
     for (const [date, items] of Object.entries(groups)) {
-        html += `<div class="date-group">
-            <div class="date-group-title">📅 ${escapeHtml(date)}</div>`;
+        html += '<div class="date-group">' +
+            '<div class="date-group-title">📅 ' + escapeHtml(date) + '</div>';
         items.forEach(d => {
             html += renderDiaryCard(d);
         });
@@ -632,75 +650,146 @@ function renderDiaryCard(d) {
     const privacyIcon = d.is_private ? '🔒' : '🌐';
     const timeStr = formatTime(d.created_at);
     const isExpanded = expandedId === d.id;
+    const locked = isDiaryLocked(d);
+    const isUnlocked = unlockedDiaryIds.has(d.id);
+    const showLocked = locked && !isUnlocked;
 
-    const _lockChk = d.locked && !unlockedDiaryIds.has(d.id);
-    let contentHtml;
-    if (_lockChk) {
-        contentHtml = '<div class="diary-locked-overlay" style="text-align:center;padding:20px 0;color:var(--muted);font-size:.9rem;">ð å·²å å¯ï¼éå¯ç æ¥ç</div>';
+    // 内容区
+    let contentHtml = '';
+    if (showLocked) {
+        contentHtml = '<div class="diary-locked-overlay">🔒 已加密，需密码查看</div>';
     } else if (isExpanded) {
-        contentHtml = `<div class="diary-content-full">${escapeHtml(d.content)}</div>`;
+        contentHtml = '<div class="diary-content-full">' + escapeHtml(d.content) + '</div>';
     } else {
-        contentHtml = `<div class="diary-content-preview">${escapeHtml(d.content)}</div>`;
+        contentHtml = '<div class="diary-content-preview">' + escapeHtml(d.content) + '</div>';
     }
 
+    // 操作栏（仅展开时显示）
     let actionsHtml = '';
     if (isExpanded) {
-        actionsHtml = `<div class="diary-actions">
-            ${d.locked
-                ? '<button class="diary-action-btn" onclick="event.stopPropagation(); handleDiaryLock('' + d.id + '', 'unlock')">🔓 解锁</button>'
-                : '<button class="diary-action-btn" onclick="event.stopPropagation(); handleDiaryLock('' + d.id + '', 'lock')">🔒 加密</button>'
-            }
-            <button class="diary-action-btn" onclick="event.stopPropagation(); togglePrivacy(${d.id}, ${d.is_private})">
-                ${d.is_private ? '🌐 公开' : '🔒 私密'}
-            </button>
-            <button class="diary-action-btn danger" onclick="event.stopPropagation(); openDeleteModal(${d.id})">
-                🗑️ 删除
-            </button>
-        </div>`;
+        actionsHtml = '<div class="diary-actions">';
+        if (locked) {
+            actionsHtml += '<button class="diary-action-btn" data-action="unlock" data-id="' + d.id + '">🔓 解锁</button>';
+        } else {
+            actionsHtml += '<button class="diary-action-btn" data-action="lock" data-id="' + d.id + '">🔒 加密</button>';
+        }
+        actionsHtml += '<button class="diary-action-btn" data-action="privacy" data-id="' + d.id + '" data-private="' + (d.is_private ? '1' : '0') + '">' +
+            (d.is_private ? '🌐 公开' : '🔒 私密') + '</button>';
+        actionsHtml += '<button class="diary-action-btn danger" data-action="delete" data-id="' + d.id + '">🗑️ 删除</button>';
+        actionsHtml += '</div>';
     }
 
+    // 评论区（仅展开且未锁定时显示）
     let commentsHtml = '';
-    if (isExpanded && !_lockChk && d.comments && d.comments.length) {
-        commentsHtml = `<div class="comments-section">
-            <div class="comments-title">💬 评论 (${d.comments.length})</div>
-            ${d.comments.map(c => `<div class="comment-item">
-                <div class="comment-avatar">💬</div>
-                <div class="comment-body">
-                    <div class="comment-text">${escapeHtml(c.content || c.text || '')}</div>
-                    <div class="comment-time">${formatTime(c.created_at)}</div>
-                </div>
-            </div>`).join('')}
-        </div>`;
+    if (isExpanded && !showLocked && d.comments && d.comments.length) {
+        commentsHtml = '<div class="comments-section">' +
+            '<div class="comments-title">💬 评论 (' + d.comments.length + ')</div>';
+        d.comments.forEach(c => {
+            commentsHtml += '<div class="comment-item">' +
+                '<div class="comment-avatar">💬</div>' +
+                '<div class="comment-body">' +
+                    '<div class="comment-text">' + escapeHtml(c.content || c.text || '') + '</div>' +
+                    '<div class="comment-time">' + formatTime(c.created_at) + '</div>' +
+                '</div>' +
+            '</div>';
+        });
+        commentsHtml += '</div>';
     }
 
+    // 评论输入（仅展开且未锁定时显示）
     let commentInputHtml = '';
-    if (isExpanded && !_lockChk) {
-        commentInputHtml = `<div class="comment-input-row">
-            <input type="text" id="comment-input-${d.id}" placeholder="写评论..." onkeydown="if(event.key==='Enter'){event.stopPropagation();addComment(${d.id})}">
-            <button class="btn btn-sm btn-ghost" onclick="event.stopPropagation();addComment(${d.id})">发送</button>
-        </div>`;
+    if (isExpanded && !showLocked) {
+        commentInputHtml = '<div class="comment-input-row">' +
+            '<input type="text" id="comment-input-' + d.id + '" placeholder="写评论...">' +
+            '<button class="btn btn-sm btn-ghost" data-action="comment" data-id="' + d.id + '">发送</button>' +
+        '</div>';
     }
 
-    const _lck = d.locked && !unlockedDiaryIds.has(d.id);
-    return `<div class="diary-card ${isExpanded ? 'expanded' : ''}" onclick="${_lck ? '' : `toggleExpand(${d.id})`}">
-        <div class="diary-card-header">
-            <div class="diary-meta">
-                ${moodEmoji ? `<span class="diary-mood">${moodEmoji}</span>` : ''}
-                <span>${escapeHtml(timeStr)}</span>
-                ${d.locked ? '<span style="margin-left:6px;font-size:.8rem;" title="已加密">🔒</span>' : ''}
-            </div>
-            <span class="diary-privacy-icon" title="${d.is_private ? '私密' : '公开'}">${privacyIcon}</span>
-        </div>
-        ${contentHtml}
-        ${actionsHtml}
-        ${commentsHtml}
-        ${commentInputHtml}
-    </div>`;
+    // 卡片点击：加密状态不可展开
+    const clickAttr = showLocked ? '' : (' data-action="expand" data-id="' + d.id + '"');
+
+    return '<div class="diary-card' + (isExpanded ? ' expanded' : '') + '"' + clickAttr + '>' +
+        '<div class="diary-card-header">' +
+            '<div class="diary-meta">' +
+                (moodEmoji ? '<span class="diary-mood">' + moodEmoji + '</span>' : '') +
+                '<span>' + escapeHtml(timeStr) + '</span>' +
+                (locked ? '<span style="margin-left:6px;font-size:.8rem;" title="已加密">🔒</span>' : '') +
+            '</div>' +
+            '<span class="diary-privacy-icon" title="' + (d.is_private ? '私密' : '公开') + '">' + privacyIcon + '</span>' +
+        '</div>' +
+        contentHtml +
+        actionsHtml +
+        commentsHtml +
+        commentInputHtml +
+    '</div>';
 }
 
-// ── 单篇日记苍聿锁 ──
+// ── 事件委托：统一处理卡片内按钮点击 ──
+document.addEventListener('click', function(e) {
+    const btn = e.target.closest('[data-action]');
+    if (!btn) {
+        // 检查是否点击了卡片本身（展开/收起）
+        const card = e.target.closest('.diary-card[data-action="expand"]');
+        if (card) {
+            const id = card.getAttribute('data-id');
+            if (id) toggleExpand(id);
+        }
+        return;
+    }
+
+    e.stopPropagation();
+    const action = btn.getAttribute('data-action');
+    const id = btn.getAttribute('data-id');
+
+    switch (action) {
+        case 'expand':
+            toggleExpand(id);
+            break;
+        case 'lock':
+            handleDiaryLock(id, 'lock');
+            break;
+        case 'unlock':
+            handleDiaryLock(id, 'unlock');
+            break;
+        case 'privacy':
+            const isPrivate = btn.getAttribute('data-private') === '1';
+            togglePrivacy(id, isPrivate);
+            break;
+        case 'delete':
+            openDeleteModal(id);
+            break;
+        case 'comment':
+            addComment(id);
+            break;
+    }
+});
+
+// 评论输入框回车发送（事件委托）
+document.addEventListener('keydown', function(e) {
+    if (e.key !== 'Enter') return;
+    const input = e.target;
+    if (!input.id || !input.id.startsWith('comment-input-')) return;
+    e.preventDefault();
+    e.stopPropagation();
+    const diaryId = input.id.replace('comment-input-', '');
+    addComment(diaryId);
+});
+
+// ── 展开/收起日记 ──
+function toggleExpand(id) {
+    // id 可能是字符串或数字，统一处理
+    const numId = Number(id);
+    if (expandedId === numId) {
+        expandedId = null;
+    } else {
+        expandedId = numId;
+    }
+    renderDiaries();
+}
+
+// ── 单篇日记加密/解锁 ──
 function handleDiaryLock(id, action) {
-    lockTargetId = id;
+    lockTargetId = Number(id);
     lockAction = action;
     var isUnlock = action === 'unlock';
     document.getElementById('lock-modal-title').textContent = isUnlock ? '🔓 解锁日记' : '🔒 加密日记';
@@ -710,6 +799,7 @@ function handleDiaryLock(id, action) {
     document.getElementById('lock-modal').classList.add('active');
     setTimeout(function(){document.getElementById('lock-password').focus();}, 200);
 }
+
 async function submitDiaryLock() {
     var pw = document.getElementById('lock-password').value.trim();
     try {
@@ -725,37 +815,34 @@ async function submitDiaryLock() {
         lockTargetId = null;
         lockAction = null;
         await loadDiaries();
-    } catch(e) { showToast('操作失败: ' + e.message, 'error'); }
-}
-// ── 展开/收起日记 ──
-function toggleExpand(id) {
-    if (expandedId === id) {
-        expandedId = null;
-    } else {
-        expandedId = id;
+    } catch(e) {
+        showToast('操作失败: ' + e.message, 'error');
     }
-    renderDiaries();
 }
 
 // ── 心情选择器 ──
 function renderMoodSelector() {
     const container = $('#mood-selector');
     container.innerHTML = MOODS.map(m =>
-        `<button type="button" class="mood-option" data-mood="${m.emoji}" onclick="selectMood(this, '${m.emoji}')">
-            <span class="mood-emoji">${m.emoji}</span>${m.label}
-        </button>`
+        '<button type="button" class="mood-option" data-mood="' + m.emoji + '">' +
+            '<span class="mood-emoji">' + m.emoji + '</span>' + m.label +
+        '</button>'
     ).join('');
 }
 
-function selectMood(el, emoji) {
+// 心情选择事件委托
+document.addEventListener('click', function(e) {
+    const moodBtn = e.target.closest('.mood-option');
+    if (!moodBtn) return;
+    const emoji = moodBtn.getAttribute('data-mood');
     $$('.mood-option').forEach(b => b.classList.remove('selected'));
     if (selectedMood === emoji) {
         selectedMood = null;
     } else {
-        el.classList.add('selected');
+        moodBtn.classList.add('selected');
         selectedMood = emoji;
     }
-}
+});
 
 // ── 私密开关 ──
 function togglePrivacySwitch() {
@@ -802,7 +889,7 @@ async function submitDiary() {
 // ── 隐私切换 ──
 async function togglePrivacy(id, currentPrivate) {
     try {
-        await apiPost(`/api/v1/diary/${id}/toggle-privacy`, {});
+        await apiPost('/api/v1/diary/' + id + '/toggle-privacy', {});
         showToast(currentPrivate ? '已设为公开' : '已设为私密', 'success');
         await loadDiaries();
     } catch (e) {
@@ -812,7 +899,7 @@ async function togglePrivacy(id, currentPrivate) {
 
 // ── 删除日记 ──
 function openDeleteModal(id) {
-    deleteTargetId = id;
+    deleteTargetId = Number(id);
     $('#delete-modal').classList.add('active');
 }
 
@@ -824,7 +911,7 @@ function closeDeleteModal() {
 async function confirmDelete() {
     if (!deleteTargetId) return;
     try {
-        await apiDelete(`/api/v1/diary/${deleteTargetId}`);
+        await apiDelete('/api/v1/diary/' + deleteTargetId);
         showToast('日记已删除', 'success');
         closeDeleteModal();
         if (expandedId === deleteTargetId) expandedId = null;
@@ -836,7 +923,7 @@ async function confirmDelete() {
 
 // ── 评论 ──
 async function addComment(diaryId) {
-    const input = $(`#comment-input-${diaryId}`);
+    const input = $('#comment-input-' + diaryId);
     if (!input) return;
     const text = input.value.trim();
     if (!text) {
@@ -844,7 +931,7 @@ async function addComment(diaryId) {
         return;
     }
     try {
-        await apiPost(`/api/v1/diary/${diaryId}/comments`, { content: text });
+        await apiPost('/api/v1/diary/' + diaryId + '/comments', { content: text });
         showToast('评论成功', 'success');
         await loadDiaries();
     } catch (e) {
@@ -852,7 +939,7 @@ async function addComment(diaryId) {
     }
 }
 
-// ── 加密/解锁 ──
+// ── 全局加密/解锁状态 ──
 function updateLockStatus() {
     const icon = $('#lock-icon');
     const text = $('#lock-text');
@@ -870,22 +957,19 @@ function updateLockStatus() {
 
 function handleLockToggle() {
     if (isLocked) {
-        // 解锁
         $('#lock-modal-title').textContent = '🔓 解锁日记';
         $('#lock-modal-desc').textContent = '输入密码以解锁日记';
         $('#lock-confirm-btn').textContent = '解锁';
-        $('#lock-password').value = '';
-        $('#lock-modal').classList.add('active');
-        setTimeout(() => $('#lock-password').focus(), 200);
     } else {
-        // 加密
         $('#lock-modal-title').textContent = '🔐 加密日记';
         $('#lock-modal-desc').textContent = '设置密码后，日记将对他人隐藏';
         $('#lock-confirm-btn').textContent = '加密';
-        $('#lock-password').value = '';
-        $('#lock-modal').classList.add('active');
-        setTimeout(() => $('#lock-password').focus(), 200);
     }
+    $('#lock-password').value = '';
+    lockTargetId = null;
+    lockAction = null;
+    $('#lock-modal').classList.add('active');
+    setTimeout(() => $('#lock-password').focus(), 200);
 }
 
 function closeLockModal() {
@@ -893,10 +977,13 @@ function closeLockModal() {
 }
 
 async function submitLock() {
-    if (lockTargetId) { await submitDiaryLock(); return; }
+    // 单篇日记加密/解锁
+    if (lockTargetId) {
+        await submitDiaryLock();
+        return;
+    }
 
-    if (lockTargetId) { await submitDiaryLock(); return; }
-
+    // 全局加密/解锁
     const password = $('#lock-password').value.trim();
     if (!password) {
         showToast('请输入密码', 'error');
@@ -918,8 +1005,6 @@ async function submitLock() {
         showToast('操作失败: ' + e.message, 'error');
     }
 }
-
-
 
 // ── 模态框点击遮罩关闭 ──
 document.addEventListener('click', (e) => {
