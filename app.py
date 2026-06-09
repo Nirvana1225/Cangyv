@@ -118,9 +118,60 @@ def v1_proxy(path):
         return jsonify({"error": str(e)}), 502
 
 # ── MCP 代理 ──
-@app.route("/mcp", methods=["POST"])
+@app.route("/mcp", methods=["GET", "POST"])
 def mcp_proxy():
     target = f"{GATEWAY_URL}/mcp"
+    headers = {k: v for k, v in request.headers if k.lower() not in ("host", "content-length")}
+    if request.method == "GET":
+        # SSE 流式代理
+        try:
+            resp = http_requests.get(target, headers=headers, stream=True, timeout=300)
+            excluded = {"content-encoding", "transfer-encoding", "content-length", "connection"}
+            resp_headers = {k: v for k, v in resp.headers.items() if k.lower() not in excluded}
+            resp_headers["Cache-Control"] = "no-cache"
+            resp_headers["X-Accel-Buffering"] = "no"
+
+            def generate():
+                for chunk in resp.iter_content(chunk_size=None):
+                    if chunk:
+                        yield chunk
+
+            return Response(stream_with_context(generate()), status=resp.status_code,
+                          headers=resp_headers, content_type="text/event-stream")
+        except http_requests.RequestException as e:
+            return jsonify({"error": str(e)}), 502
+    else:
+        try:
+            resp = http_requests.post(target, json=request.get_json(silent=True), headers=headers, timeout=30)
+            return Response(resp.content, status=resp.status_code, content_type="application/json")
+        except http_requests.RequestException as e:
+            return jsonify({"error": str(e)}), 502
+
+# ── 旧版 HTTP+SSE MCP 代理（2024-11-05 协议兼容） ──
+@app.route("/sse", methods=["GET"])
+def sse_proxy():
+    target = f"{GATEWAY_URL}/sse"
+    headers = {k: v for k, v in request.headers if k.lower() not in ("host", "content-length")}
+    try:
+        resp = http_requests.get(target, headers=headers, stream=True, timeout=300)
+        excluded = {"content-encoding", "transfer-encoding", "content-length", "connection"}
+        resp_headers = {k: v for k, v in resp.headers.items() if k.lower() not in excluded}
+        resp_headers["Cache-Control"] = "no-cache"
+        resp_headers["X-Accel-Buffering"] = "no"
+
+        def generate():
+            for chunk in resp.iter_content(chunk_size=None):
+                if chunk:
+                    yield chunk
+
+        return Response(stream_with_context(generate()), status=resp.status_code,
+                      headers=resp_headers, content_type="text/event-stream")
+    except http_requests.RequestException as e:
+        return jsonify({"error": str(e)}), 502
+
+@app.route("/messages", methods=["POST"])
+def messages_proxy():
+    target = f"{GATEWAY_URL}/messages"
     headers = {k: v for k, v in request.headers if k.lower() not in ("host", "content-length")}
     try:
         resp = http_requests.post(target, json=request.get_json(silent=True), headers=headers, timeout=30)
