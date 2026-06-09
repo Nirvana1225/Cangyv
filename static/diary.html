@@ -555,6 +555,9 @@ let isPrivate = false;
 let deleteTargetId = null;
 let isLocked = false;
 let expandedId = null;
+let unlockedDiaryIds = new Set();
+let lockTargetId = null;
+let lockAction = null;
 
 // ── 初始化 ──
 document.addEventListener('DOMContentLoaded', () => {
@@ -684,6 +687,35 @@ function renderDiaryCard(d) {
     </div>`;
 }
 
+// ── 单篇日记苍聿锁 ──
+function handleDiaryLock(id, action) {
+    lockTargetId = id;
+    lockAction = action;
+    var isUnlock = action === 'unlock';
+    document.getElementById('lock-modal-title').textContent = isUnlock ? '🔓 解锁日记' : '🔒 加密日记';
+    document.getElementById('lock-modal-desc').textContent = isUnlock ? '输入密码以解锁这篇日记' : '设置密码，加密这篇日记';
+    document.getElementById('lock-confirm-btn').textContent = isUnlock ? '解锁' : '加密';
+    document.getElementById('lock-password').value = '';
+    document.getElementById('lock-modal').classList.add('active');
+    setTimeout(function(){document.getElementById('lock-password').focus();}, 200);
+}
+async function submitDiaryLock() {
+    var pw = document.getElementById('lock-password').value.trim();
+    try {
+        if (lockAction === 'unlock') {
+            await apiPost('/api/v1/diary/' + lockTargetId + '/unlock', { password: pw });
+            unlockedDiaryIds.add(lockTargetId);
+            showToast('解锁成功 🔓', 'success');
+        } else {
+            await apiPost('/api/v1/diary/' + lockTargetId + '/lock', { password: pw });
+            showToast('已加密 🔒', 'success');
+        }
+        closeLockModal();
+        lockTargetId = null;
+        lockAction = null;
+        await loadDiaries();
+    } catch(e) { showToast('操作失败: ' + e.message, 'error'); }
+}
 // ── 展开/收起日记 ──
 function toggleExpand(id) {
     if (expandedId === id) {
