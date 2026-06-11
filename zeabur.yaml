@@ -3,3 +3,4 @@ services:
   - name: web
     run: gunicorn app:app --bind 0.0.0.0 --workers 2 --port $PORT
 # rebuild-trigger: 2026-06-11 14:50 force redeploy for schedule nav
+# rebuild_trigger: 20260611083856
