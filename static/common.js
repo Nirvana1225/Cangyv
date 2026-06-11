@@ -118,6 +118,7 @@ function renderNav(activePage) {
         { path: '/reader', label: '共读', icon: '📚', id: 'reader' },
         { path: '/cinema', label: '陪看', icon: '🎬', id: 'cinema' },
         { path: '/pet', label: '桌宠', icon: '🐱', id: 'pet' },
+        { path: 'https://mr-blinds-hose.zeabur.app/agent/dashboard', label: '日程', icon: '🕶️', id: 'schedule' },
     ];
     const morePages = [
         { path: '/apiconfig', label: 'API', icon: '🔌', id: 'apiconfig' },
